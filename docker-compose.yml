@@ -162,6 +162,28 @@ services:
       - '.env'
 
 
+# █████╗ ███╗   ██╗██╗███╗   ███╗███████╗ ██████╗ ██████╗
+# ██╔══██╗████╗  ██║██║████╗ ████║██╔════╝██╔═══██╗██╔═══██╗
+# ███████║██╔██╗ ██║██║██╔████╔██║█████╗  ██║   ██║██║   ██║
+# ██╔══██║██║╚██╗██║██║██║╚██╔╝██║██╔══╝  ██║   ██║██║   ██║
+# ██║  ██║██║ ╚████║██║██║ ╚═╝ ██║███████╗╚██████╔╝╚██████╔╝
+# ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝     ╚═╝╚══════╝ ╚═════╝  ╚═════╝
+
+  sonarr-anime:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr-anime
+    #network_mode: "service:gluetun"
+    ports:
+      - 8990:8989 # Using port 8990 to avoid conflict with the other Sonarr
+    volumes:
+      - ${ARRPATH}Sonarr-Anime/config:/config
+      - ${ARRPATH}Sonarr-Anime/anime:/data/anime # <-- Points to your new anime library folder
+      - ${ARRPATH}Downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
 
 # ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██████╗
 # ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
@@ -364,11 +386,12 @@ services:
   emby:
     image: lscr.io/linuxserver/emby:latest
     container_name: emby
-    volumes:
-      - ${ARRPATH}Emby/config:/config
-      - ${ARRPATH}Radarr/movies:/data/movies
-      - ${ARRPATH}Sonarr/tvshows:/data/tvshows
 
+    volumes:
+    - ${ARRPATH}Emby/config:/config
+    - ${ARRPATH}Radarr/movies:/data/movies
+    - ${ARRPATH}Sonarr/tvshows:/data/tvshows
+    - ${ARRPATH}Sonarr-Anime/anime:/data/anime 
     ports:
       - 8096:8096
       - 8920:8920
