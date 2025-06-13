@@ -53,14 +53,14 @@ services:
     container_name: nzbget
     network_mode: "service:gluetun"
     environment:
-      - PUID=1000
-      - PGID=1000
       - NZBGET_USER=admin #optional
       - NZBGET_PASS=J@7713 #optional
     volumes:
       - ${ARRPATH}nzbget/config:/config
       - ${ARRPATH}Downloads:/downloads
     restart: unless-stopped
+    env_file:
+      - '.env'
 
 
 
@@ -102,16 +102,14 @@ services:
   rdt-client:
     image: rogerfar/rdt-client:latest
     container_name: rdt-client
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
     volumes:
       - ${ARRPATH}rdt-client/config:/config
       - ${ARRPATH}Downloads:/data/downloads
     ports:
       - 6500:6500
     restart: unless-stopped
+    env_file:
+  - '.env'
 
 
 
