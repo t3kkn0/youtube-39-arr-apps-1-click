@@ -197,10 +197,6 @@ services:
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    environment:
-      - PUID=1000
-      - PGID=1000
-      - TZ=Etc/UTC
     volumes:
       - ${ARRPATH}Bazarr/config:/config
       - ${ARRPATH}Radarr/movies:/movies
@@ -208,6 +204,8 @@ services:
     ports:
       - 6767:6767
     restart: unless-stopped
+    env_file:
+      - '.env'
 
 
 # ██╗  ██╗ ██████╗ ███╗   ███╗ █████╗ ██████╗ ██████╗
@@ -370,9 +368,7 @@ services:
       - ${ARRPATH}Emby/config:/config
       - ${ARRPATH}Radarr/movies:/data/movies
       - ${ARRPATH}Sonarr/tvshows:/data/tvshows
-      - /mnt/usbMedia01:/mnt/usbMedia01
-      - /mnt/usbMedia02:/mnt/usbMedia02
-      - /mnt/usbMedia03:/mnt/usbMedia03
+
     ports:
       - 8096:8096
       - 8920:8920
