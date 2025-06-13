@@ -115,13 +115,12 @@ services:
   prowlarr:
     image: linuxserver/prowlarr:latest
     container_name: prowlarr
-    #network_mode: "service:gluetun"
     ports:
       - 9696:9696
     volumes:
-      - ${ARRPATH}Prowlarr/config:/config
-      - ${ARRPATH}Prowlarr/backup:/data/Backup
-      - ${ARRPATH}Downloads:/downloads
+      - prowlarr_config:/config
+      - prowlarr_backup:/data/Backup
+      - downloads:/downloads
     restart: unless-stopped
     env_file:
       - '.env'
@@ -387,5 +386,27 @@ services:
     restart: unless-stopped
     env_file:
       - '.env'
+
+
+
+volumes:
+  prowlarr_config:
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,nolock,soft"  #<-- REPLACE WITH YOUR SYNOLOGY'S IP
+      device: ":/volume1/DATA/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
+
+  prowlarr_backup:
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,nolock,soft"
+      device: ":/volume1/DATA/Prowlarr/backup"
+
+  downloads:
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,nolock,soft"
+      device: ":/volume1/DATA/Downloads"
+
 
 
