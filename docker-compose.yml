@@ -22,8 +22,8 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     dns:
-      - 8.8.8.8
       - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./gluetun-config:/gluetun
     environment:
