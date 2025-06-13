@@ -89,7 +89,7 @@ services:
 # ╚═╝  ╚═══╝╚═════╝    ╚═╝
 
   rdt-client:
-    image: rogerfar/rdt-client:latest
+    image: rogerfar/rdtclient:latest
     container_name: rdt-client
     volumes:
       - ${ARRPATH}rdt-client/config:/config
