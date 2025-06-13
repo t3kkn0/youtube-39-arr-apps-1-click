@@ -6,7 +6,7 @@ services:
 # ╚██████╔╝███████╗╚██████╔╝███████╗   ██║   ╚██████╔╝██║ ╚████║
 #  ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝
   gluetun:
-    image: qmcgaw/gluetun
+    image: atasmohammadi/gluetun
     container_name: gluetun
     ports:
       - 6789:6789      # NZBGet
