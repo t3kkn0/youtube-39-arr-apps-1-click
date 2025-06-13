@@ -33,228 +33,29 @@ services:
 
 
 
-# ██████╗ ██████╗  ██████╗ ██╗   ██╗██╗      █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗██╔═══██╗██║   ██║██║     ██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝██████╔╝██║   ██║██║ █╗ ██║██║     ███████║██████╔╝██████╔╝
-# ██╔═══╝ ██╔══██╗██║   ██║██║███╗██║██║     ██╔══██║██╔══██╗██╔══██╗
-# ██║     ██║  ██║╚██████╔╝╚███╔███╔╝███████╗██║  ██║██║  ██║██║  ██║
-# ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  prowlarr:
-    image: linuxserver/prowlarr:latest
-    container_name: prowlarr
-    #network_mode: "service:gluetun"
-    ports:
-      - 9696:9696
-    volumes:
-      - ${ARRPATH}Prowlarr/config:/config
-      - ${ARRPATH}Prowlarr/backup:/data/Backup
-      - ${ARRPATH}Downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
 
-# ███████╗ ██████╗ ███╗   ██╗ █████╗ ██████╗ ██████╗
-# ██╔════╝██╔═══██╗████╗  ██║██╔══██╗██╔══██╗██╔══██╗
-# ███████╗██║   ██║██╔██╗ ██║███████║██████╔╝██████╔╝
-# ╚════██║██║   ██║██║╚██╗██║██╔══██║██╔══██╗██╔══██╗
-# ███████║╚██████╔╝██║ ╚████║██║  ██║██║  ██║██║  ██║
-# ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  sonarr:
-    image: linuxserver/sonarr:latest
-    container_name: sonarr
-    #network_mode: "service:gluetun"
-    ports:
-      - 8989:8989
-    volumes:
-      - ${ARRPATH}Sonarr/config:/config
-      - ${ARRPATH}Sonarr/backup:/data/Backup
-      - ${ARRPATH}Sonarr/tvshows:/data/tvshows
-      - ${ARRPATH}Downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+# ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
+# ████╗  ██║╚══███╔╝██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
+# ██╔██╗ ██║  ███╔╝ ██████╔╝██║  ███╗█████╗     ██║
+# ██║╚██╗██║ ███╔╝  ██╔══██╗██║   ██║██╔══╝     ██║
+# ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗   ██║
+# ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝   ╚═╝
 
-# ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝███████║██║  ██║███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  radarr:
-    image: linuxserver/radarr:latest
-    container_name: radarr
-    #network_mode: "service:gluetun"
-    ports:
-      - 7878:7878
-    volumes:
-      - ${ARRPATH}Radarr/config:/config
-      - ${ARRPATH}Radarr/movies:/data/movies
-      - ${ARRPATH}Radarr/backup:/data/Backup
-      - ${ARRPATH}Downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
-
-# ██████╗  █████╗ ███████╗ █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝███████║  ███╔╝ ███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══██║ ███╔╝  ██╔══██║██╔══██╗██╔══██╗
-# ██████╔╝██║  ██║███████╗██║  ██║██║  ██║██║  ██║
-# ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr
+  nzbget:
+    image: lscr.io/linuxserver/nzbget:latest
+    container_name: nzbget
+    network_mode: "service:gluetun"
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=Etc/UTC
+      - NZBGET_USER=admin #optional
+      - NZBGET_PASS=J@7713 #optional
     volumes:
-      - ${ARRPATH}Bazarr/config:/config
-      - ${ARRPATH}Radarr/movies:/movies
-      - ${ARRPATH}Sonarr/tvshows:/tv
-    ports:
-      - 6767:6767
+      - ${ARRPATH}nzbget/config:/config
+      - ${ARRPATH}Downloads:/downloads
     restart: unless-stopped
 
-# ██╗      ██╗██████╗  █████╗ ██████╗ ██████╗
-# ██║      ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██║      ██║██║  ██║███████║██████╔╝██████╔╝
-# ██║      ██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ███████╗██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-#  lidarr:
-#    image: linuxserver/lidarr:latest
-#    container_name: lidarr
-#    #network_mode: "service:gluetun"
-#    ports:
-#      - 8686:8686
-#    volumes:
-#      - ${ARRPATH}Lidarr/config:/config
-#      - ${ARRPATH}Lidarr/music:/data/musicfolder
-#      - ${ARRPATH}Downloads:/downloads
-#    restart: unless-stopped
-#    env_file:
-#      - '.env'
 
-# ██████╗ ███████╗ █████╗ ██████╗  █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝█████╗   ███████║██║  ██║███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══╝   ██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║███████╗██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-#  readarr:
-#    image: linuxserver/readarr:develop
-#    container_name: readarr
-#    #network_mode: "service:gluetun"
-#    ports:
-#      - 8787:8787
-#    volumes:
-#      - ${ARRPATH}Readarr/config:/config
-#      - ${ARRPATH}Readarr/books:/data/books
-#      - ${ARRPATH}Downloads:/downloads
-#    restart: unless-stopped
-#    env_file:
-#      - '.env'
-
-# ██╗  ██╗ ██████╗ ███╗   ███╗ █████╗ ██████╗ ██████╗
-# ██║  ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗██╔══██╗
-# ███████║██║   ██║██╔████╔██║███████║██████╔╝██████╔╝
-# ██╔══██║██║   ██║██║╚██╔╝██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-  homarr:
-    container_name: homarr
-    image: ghcr.io/ajnart/homarr:latest
-    restart: unless-stopped
-    volumes:
-      - ${ARRPATH}Homarr/configs:/app/data/configs
-      - ${ARRPATH}Homarr/icons:/app/public/icons
-      - ${ARRPATH}Homarr/data:/data
-    ports:
-      - '7575:7575'
-    env_file:
-      - '.env'
-
-# ███████╗███╗   ██╗██████╗  ██╗   ██╗
-# ██╔════╝████╗ ████║██╔══██╗ ╚██╗ ██╔╝
-# █████╗  ██╔████╔██║██████╔╝  ╚████╔╝
-# ██╔══╝  ██║╚██╔╝██║██╔══██╗   ╚██╔╝
-# ███████╗██║ ╚═╝ ██║██████╔╝    ██║
-# ╚══════╝╚═╝     ╚═╝╚═════╝     ╚═╝
-  emby:
-    image: lscr.io/linuxserver/emby:latest
-    container_name: emby
-    volumes:
-      - ${ARRPATH}Emby/config:/config
-      - ${ARRPATH}Radarr/movies:/data/movies
-      - ${ARRPATH}Sonarr/tvshows:/data/tvshows
-      - /mnt/usbMedia01:/mnt/usbMedia01
-      - /mnt/usbMedia02:/mnt/usbMedia02
-      - /mnt/usbMedia03:/mnt/usbMedia03
-    ports:
-      - 8096:8096
-      - 8920:8920
-    restart: unless-stopped
-    env_file:
-      - '.env'
-
-#     ██╗███████╗██╗     ██╗  ██╗   ██╗███████╗███████╗███████╗██████╗ ██████╗
-#     ██║██╔════╝██║     ██║  ╚██╗ ██╔╝██╔════╝██╔════╝██╔════╝██╔══██╗██╔══██╗
-#     ██║█████╗  ██║     ██║   ╚████╔╝ ███████╗█████╗  █████╗  ██████╔╝██████╔╝
-# ██  ██║██╔══╝  ██║     ██║    ╚██╔╝  ╚════██║██╔══╝  ██╔══╝  ██╔══██╗██╔══██╗
-# ╚█████╔╝███████╗███████╗███████╗██║   ███████║███████╗███████╗██║  ██║██║  ██║
-#  ╚════╝ ╚══════╝╚══════╝╚══════╝╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
-  jellyseerr:
-    image: fallenbagel/jellyseerr:latest
-    container_name: jellyseerr
-    #network_mode: "service:gluetun"
-    ports:
-      - 5055:5055
-    volumes:
-      - ${ARRPATH}JellySeerr/config:/app/config
-    restart: unless-stopped
-    env_file:
-      - '.env'
-
-#   ██████╗  █████╗ ██╗      ██╗██████╗  ██████╗  ███████╗
-#  ██╔════╝ ██╔══██╗██║      ██║██╔══██╗ ██╔══██╗ ██╔════╝
-#  ██║     ███████║██║      ██║██████╔╝ ██████╔╝ █████╗
-#  ██║     ██╔══██║██║      ██║██╔══██╗ ██╔══██╗ ██╔══╝
-#  ╚██████╗██║  ██║███████╗ ██║██████╔╝ ██║  ██║ ███████╗
-#   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═╝╚═════╝  ╚═╝  ╚═╝ ╚══════╝
-#  calibre:
-#    image: lscr.io/linuxserver/calibre:latest
-#    container_name: calibre
-#    volumes:
-#      - ${ARRPATH}Calibre/config:/config
-#      - ${ARRPATH}Readarr/books:/data/Books
-#      - /mnt/usbMedia01:/mnt/usbMedia01
-#      - /mnt/usbMedia02:/mnt/usbMedia02
-#      - /mnt/usbMedia03:/mnt/usbMedia03
-#    ports:
-#      - 8080:8080
-#      - 8181:8181
-#      - 8081:8081
-#    restart: unless-stopped
-
-# ██████╗ ██╗    ███████╗██╗  ██╗
-# ██╔══██╗██║    ██╔════╝╚██╗██╔╝
-# ██████╔╝██║    █████╗    ╚███╔╝
-# ██╔═══╝ ██║    ██╔══╝    ██╔██╗
-# ██║     ███████╗███████╗██╔╝ ██╗
-# ╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝
-#  plex:
-#    image: lscr.io/linuxserver/plex:latest
-#    container_name: plex
-#    network_mode: host
-#    environment:
-#      - VERSION=docker
-#      - PLEX_CLAIM= #optional
-#    volumes:
-#      - ${ARRPATH}Plex/config:/config
-#      - ${ARRPATH}Radarr/movies:/data/Movies
-#      - ${ARRPATH}Sonarr/tvshows:/data/TVShows
-#    restart: unless-stopped
 
 # ██████╗ ██████╗ ██╗████████╗████████╗ ██████╗ ██████╗ ██████╗ ███████╗███╗   ██╗████████╗
 # ██╔═══██╗██╔══██╗██║╚══██╔══╝╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝████╗  ██║╚══██╔══╝
@@ -262,6 +63,7 @@ services:
 # ██║▄▄ ██║██╔══██╗██║   ██║      ██║   ██║   ██║██╔══██╗██╔══██╗██╔══╝  ██║╚██╗██║   ██║
 # ╚██████╔╝██████╔╝██║   ██║      ██║   ╚██████╔╝██║  ██║██║  ██║███████╗██║ ╚████║   ██║
 #  ╚══▀▀═╝ ╚═════╝ ╚═╝   ╚═╝      ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
+
   qbittorrent:
     image: linuxserver/qbittorrent:latest
     container_name: qbittorrent
@@ -279,6 +81,9 @@ services:
       start_period: 15s
     env_file:
       - '.env'
+
+
+
 
 # ██████╗   ██████╗ ████████╗
 # ██╔══██╗  ██╔══██╗╚══██╔══╝
@@ -301,22 +106,273 @@ services:
       - 6500:6500
     restart: unless-stopped
 
-# ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
-# ████╗  ██║╚══███╔╝██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
-# ██╔██╗ ██║  ███╔╝ ██████╔╝██║  ███╗█████╗     ██║
-# ██║╚██╗██║ ███╔╝  ██╔══██╗██║   ██║██╔══╝     ██║
-# ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗   ██║
-# ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝   ╚═╝
-  nzbget:
-    image: lscr.io/linuxserver/nzbget:latest
-    container_name: nzbget
-    network_mode: "service:gluetun"
+
+
+    
+
+      
+
+# ██████╗ ██████╗  ██████╗ ██╗   ██╗██╗      █████╗ ██████╗ ██████╗
+# ██╔══██╗██╔══██╗██╔═══██╗██║   ██║██║     ██╔══██╗██╔══██╗██╔══██╗
+# ██████╔╝██████╔╝██║   ██║██║ █╗ ██║██║     ███████║██████╔╝██████╔╝
+# ██╔═══╝ ██╔══██╗██║   ██║██║███╗██║██║     ██╔══██║██╔══██╗██╔══██╗
+# ██║     ██║  ██║╚██████╔╝╚███╔███╔╝███████╗██║  ██║██║  ██║██║  ██║
+# ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+  prowlarr:
+    image: linuxserver/prowlarr:latest
+    container_name: prowlarr
+    #network_mode: "service:gluetun"
+    ports:
+      - 9696:9696
+    volumes:
+      - ${ARRPATH}Prowlarr/config:/config
+      - ${ARRPATH}Prowlarr/backup:/data/Backup
+      - ${ARRPATH}Downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
+
+# ███████╗ ██████╗ ███╗   ██╗ █████╗ ██████╗ ██████╗
+# ██╔════╝██╔═══██╗████╗  ██║██╔══██╗██╔══██╗██╔══██╗
+# ███████╗██║   ██║██╔██╗ ██║███████║██████╔╝██████╔╝
+# ╚════██║██║   ██║██║╚██╗██║██╔══██║██╔══██╗██╔══██╗
+# ███████║╚██████╔╝██║ ╚████║██║  ██║██║  ██║██║  ██║
+# ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+  sonarr:
+    image: linuxserver/sonarr:latest
+    container_name: sonarr
+    #network_mode: "service:gluetun"
+    ports:
+      - 8989:8989
+    volumes:
+      - ${ARRPATH}Sonarr/config:/config
+      - ${ARRPATH}Sonarr/backup:/data/Backup
+      - ${ARRPATH}Sonarr/tvshows:/data/tvshows
+      - ${ARRPATH}Downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
+
+# ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██████╗
+# ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+# ██████╔╝███████║██║  ██║███████║██████╔╝██████╔╝
+# ██╔══██╗██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
+# ██║  ██║██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
+# ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+  radarr:
+    image: linuxserver/radarr:latest
+    container_name: radarr
+    #network_mode: "service:gluetun"
+    ports:
+      - 7878:7878
+    volumes:
+      - ${ARRPATH}Radarr/config:/config
+      - ${ARRPATH}Radarr/movies:/data/movies
+      - ${ARRPATH}Radarr/backup:/data/Backup
+      - ${ARRPATH}Downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
+
+# ██████╗  █████╗ ███████╗ █████╗ ██████╗ ██████╗
+# ██╔══██╗██╔══██╗╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
+# ██████╔╝███████║  ███╔╝ ███████║██████╔╝██████╔╝
+# ██╔══██╗██╔══██║ ███╔╝  ██╔══██║██╔══██╗██╔══██╗
+# ██████╔╝██║  ██║███████╗██║  ██║██║  ██║██║  ██║
+# ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
     environment:
       - PUID=1000
       - PGID=1000
-      - NZBGET_USER=admin #optional
-      - NZBGET_PASS=J@7713 #optional
+      - TZ=Etc/UTC
     volumes:
-      - ${ARRPATH}nzbget/config:/config
-      - ${ARRPATH}Downloads:/downloads
+      - ${ARRPATH}Bazarr/config:/config
+      - ${ARRPATH}Radarr/movies:/movies
+      - ${ARRPATH}Sonarr/tvshows:/tv
+    ports:
+      - 6767:6767
     restart: unless-stopped
+
+
+# ██╗  ██╗ ██████╗ ███╗   ███╗ █████╗ ██████╗ ██████╗
+# ██║  ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗██╔══██╗
+# ███████║██║   ██║██╔████╔██║███████║██████╔╝██████╔╝
+# ██╔══██║██║   ██║██║╚██╔╝██║██╔══██║██╔══██╗██╔══██╗
+# ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██║
+# ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+  homarr:
+    container_name: homarr
+    image: ghcr.io/ajnart/homarr:latest
+    restart: unless-stopped
+    volumes:
+      - ${ARRPATH}Homarr/configs:/app/data/configs
+      - ${ARRPATH}Homarr/icons:/app/public/icons
+      - ${ARRPATH}Homarr/data:/data
+    ports:
+      - '7575:7575'
+    env_file:
+      - '.env'
+
+
+
+#     ██╗███████╗██╗     ██╗  ██╗   ██╗███████╗███████╗███████╗██████╗ ██████╗
+#     ██║██╔════╝██║     ██║  ╚██╗ ██╔╝██╔════╝██╔════╝██╔════╝██╔══██╗██╔══██╗
+#     ██║█████╗  ██║     ██║   ╚████╔╝ ███████╗█████╗  █████╗  ██████╔╝██████╔╝
+# ██  ██║██╔══╝  ██║     ██║    ╚██╔╝  ╚════██║██╔══╝  ██╔══╝  ██╔══██╗██╔══██╗
+# ╚█████╔╝███████╗███████╗███████╗██║   ███████║███████╗███████╗██║  ██║██║  ██║
+#  ╚════╝ ╚══════╝╚══════╝╚══════╝╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
+
+
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    #network_mode: "service:gluetun"
+    ports:
+      - 5055:5055
+    volumes:
+      - ${ARRPATH}JellySeerr/config:/app/config
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
+
+      
+      
+
+
+# ██╗      ██╗██████╗  █████╗ ██████╗ ██████╗
+# ██║      ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+# ██║      ██║██║  ██║███████║██████╔╝██████╔╝
+# ██║      ██║██║  ██║██╔══██║██╔══██╗██╔══██╗
+# ███████╗██║██████╔╝██║  ██║██║  ██║██║  ██║
+# ╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+#  lidarr:
+#    image: linuxserver/lidarr:latest
+#    container_name: lidarr
+#    #network_mode: "service:gluetun"
+#    ports:
+#      - 8686:8686
+#    volumes:
+#      - ${ARRPATH}Lidarr/config:/config
+#      - ${ARRPATH}Lidarr/music:/data/musicfolder
+#      - ${ARRPATH}Downloads:/downloads
+#    restart: unless-stopped
+#    env_file:
+#      - '.env'
+
+
+
+# ██████╗ ███████╗ █████╗ ██████╗  █████╗ ██████╗ ██████╗
+# ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
+# ██████╔╝█████╗   ███████║██║  ██║███████║██████╔╝██████╔╝
+# ██╔══██╗██╔══╝   ██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
+# ██║  ██║███████╗██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
+# ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
+#  readarr:
+#    image: linuxserver/readarr:develop
+#    container_name: readarr
+#    #network_mode: "service:gluetun"
+#    ports:
+#      - 8787:8787
+#    volumes:
+#      - ${ARRPATH}Readarr/config:/config
+#      - ${ARRPATH}Readarr/books:/data/books
+#      - ${ARRPATH}Downloads:/downloads
+#    restart: unless-stopped
+#    env_file:
+#      - '.env'
+
+
+
+
+#   ██████╗  █████╗ ██╗      ██╗██████╗  ██████╗  ███████╗
+#  ██╔════╝ ██╔══██╗██║      ██║██╔══██╗ ██╔══██╗ ██╔════╝
+#  ██║     ███████║██║      ██║██████╔╝ ██████╔╝ █████╗
+#  ██║     ██╔══██║██║      ██║██╔══██╗ ██╔══██╗ ██╔══╝
+#  ╚██████╗██║  ██║███████╗ ██║██████╔╝ ██║  ██║ ███████╗
+#   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═╝╚═════╝  ╚═╝  ╚═╝ ╚══════╝
+#  calibre:
+#    image: lscr.io/linuxserver/calibre:latest
+#    container_name: calibre
+#    volumes:
+#      - ${ARRPATH}Calibre/config:/config
+#      - ${ARRPATH}Readarr/books:/data/Books
+#      - /mnt/usbMedia01:/mnt/usbMedia01
+#      - /mnt/usbMedia02:/mnt/usbMedia02
+#      - /mnt/usbMedia03:/mnt/usbMedia03
+#    ports:
+#      - 8080:8080
+#      - 8181:8181
+#      - 8081:8081
+#    restart: unless-stopped
+#
+#
+#
+# ██████╗ ██╗    ███████╗██╗  ██╗
+# ██╔══██╗██║    ██╔════╝╚██╗██╔╝
+# ██████╔╝██║    █████╗    ╚███╔╝
+# ██╔═══╝ ██║    ██╔══╝    ██╔██╗
+# ██║     ███████╗███████╗██╔╝ ██╗
+# ╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝
+#
+#
+#  plex:
+#    image: lscr.io/linuxserver/plex:latest
+#    container_name: plex
+#    network_mode: host
+#    environment:
+#      - VERSION=docker
+#      - PLEX_CLAIM= #optional
+#    volumes:
+#      - ${ARRPATH}Plex/config:/config
+#      - ${ARRPATH}Radarr/movies:/data/Movies
+#      - ${ARRPATH}Sonarr/tvshows:/data/TVShows
+#    restart: unless-stopped
+#
+#
+#
+#
+
+
+
+
+
+
+
+
+    # ███████╗███╗   ██╗██████╗  ██╗   ██╗
+# ██╔════╝████╗ ████║██╔══██╗ ╚██╗ ██╔╝
+# █████╗  ██╔████╔██║██████╔╝  ╚████╔╝
+# ██╔══╝  ██║╚██╔╝██║██╔══██╗   ╚██╔╝
+# ███████╗██║ ╚═╝ ██║██████╔╝    ██║
+# ╚══════╝╚═╝     ╚═╝╚═════╝     ╚═╝
+  emby:
+    image: lscr.io/linuxserver/emby:latest
+    container_name: emby
+    volumes:
+      - ${ARRPATH}Emby/config:/config
+      - ${ARRPATH}Radarr/movies:/data/movies
+      - ${ARRPATH}Sonarr/tvshows:/data/tvshows
+      - /mnt/usbMedia01:/mnt/usbMedia01
+      - /mnt/usbMedia02:/mnt/usbMedia02
+      - /mnt/usbMedia03:/mnt/usbMedia03
+    ports:
+      - 8096:8096
+      - 8920:8920
+    restart: unless-stopped
+    env_file:
+      - '.env'
+
+
