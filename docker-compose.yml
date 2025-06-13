@@ -33,6 +33,7 @@ services:
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - DNS_ADDRESS=8.8.8.8
+      - OPENVPN_RESOLVE_HOSTNAME=on
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
