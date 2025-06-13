@@ -35,9 +35,13 @@ services:
       - OPENVPN_RESOLVE_HOSTNAME=on
       - OPENVPN_PROTOCOL=tcp
       - FIREWALL_LOCAL_SUBNETS=192.168.1.0/24
-      - DOT=on
+      - DOT=off
       - DOT_PROVIDERS=quad9
-      - DNS_ADDRESS=8.8.8.8
+      - DNS_ADDRESS=1.1.1.1
+      - HEALTH_TARGET_ADDRESS=1.1.1.1:53
+      - HEALTH_VPN_DURATION_INITIAL=30s
+      - LOG_LEVEL=debug
+      - OPENVPN_VERBOSITY=3
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
