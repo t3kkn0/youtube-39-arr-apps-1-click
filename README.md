@@ -1,3 +1,277 @@
+
+# My Custom ARR Media Stack
+
+This document outlines the setup and configuration for a comprehensive media automation stack using Docker. This setup is customized to include dedicated libraries for Movies, TV Shows, and Anime, all managed through specific applications and served via Emby.
+
+## Table of Contents
+
+1.  [One-Time Server Setup](https://www.google.com/search?q=%231--one-time-server-setup)
+2.  [Managing the Stack](https://www.google.com/search?q=%232--managing-the-stack)
+3.  [Initial Application Configuration](https://www.google.com/search?q=%233--initial-application-configuration)
+
+-----
+
+## 1\. One-Time Server Setup
+
+These steps only need to be performed once when first deploying the project on your server.
+
+### Step 1.1: Clone Your Private Repository
+
+Clone **your own private repository** (not the public template) to your server. This command will download your `docker-compose.yml` and your custom `.ovpn` files.
+
+```bash
+# Replace with the actual URL from your private GitHub repo
+git clone https://github.com/YourUsername/your-private-repo.git
+```
+
+### Step 2.2: Create the Directory Structure
+
+This command will create all the necessary folders on your NAS for your applications' configurations and media. It's safe to run even if some folders already exist.
+
+```bash
+# Creates all folders on your NAS share
+sudo mkdir -p \
+/mnt/NAS-DATA/Downloads/complete \
+/mnt/NAS-DATA/Downloads/incomplete \
+/mnt/NAS-DATA/nzbget/config \
+/mnt/NAS-DATA/qbittorrent/config \
+/mnt/NAS-DATA/rdt-client/config \
+/mnt/NAS-DATA/Prowlarr/config \
+/mnt/NAS-DATA/Prowlarr/backup \
+/mnt/NAS-DATA/Sonarr/config \
+/mnt/NAS-DATA/Sonarr/backup \
+/mnt/NAS-DATA/Sonarr/tvshows \
+/mnt/NAS-DATA/Radarr/config \
+/mnt/NAS-DATA/Radarr/backup \
+/mnt/NAS-DATA/Radarr/movies \
+/mnt/NAS-DATA/Bazarr/config \
+/mnt/NAS-DATA/Homarr/configs \
+/mnt/NAS-DATA/Homarr/data \
+/mnt/NAS-DATA/Homarr/icons \
+/mnt/NAS-DATA/JellySeerr/config \
+/mnt/NAS-DATA/Emby/config \
+/mnt/NAS-DATA/Sonarr-Anime/config \
+/mnt/NAS-DATA/Sonarr-Anime/anime
+
+# Enter your project directory (use the actual name of your repo)
+cd your-private-repo
+
+# Create the gluetun config folder here
+mkdir gluetun-config
+
+# Move your OVPN files into it (if they aren't already)
+mv *.ovpn gluetun-config/
+```
+
+### Step 2.3: Set Folder Ownership
+
+This command ensures the applications running in Docker have permission to read and write to your NAS storage. It uses the `PUID` and `PGID` from your `.env` file.
+
+```bash
+sudo chown -R 1000:1000 /mnt/NAS-DATA/
+```
+
+### Step 2.4: Create the Local Secrets File
+
+While inside your project directory, create the `.env` file that will contain all your passwords and IDs. This file is ignored by Git and will **never** be uploaded to GitHub.
+
+1.  Create and open the file: `nano .env`
+2.  Paste the following content, replacing the placeholder values:
+    ```ini
+    # Main path for all ARR apps
+    ARRPATH=/mnt/NAS-DATA/
+
+    # Global Variables
+    PUID=1000
+    PGID=1000
+    TZ=Europe/Warsaw
+
+    # --- Gluetun VPN Credentials ---
+    OPENVPN_USER=YOUR-FASTVPN-USERNAME-HERE
+    OPENVPN_PASSWORD=YOUR-FASTVPN-PASSWORD-HERE
+    ```
+3.  Save and exit (`Ctrl + X`, then `Y`, then `Enter`).
+
+-----
+
+## 2\. Managing the Stack
+
+All commands must be run from inside your project directory (e.g., `/home/marek/your-private-repo`).
+
+  * **Start all services:**
+
+    ```bash
+    docker compose up -d
+    ```
+
+  * **Stop all services:**
+
+    ```bash
+    docker compose down
+    ```
+
+  * **Check the logs of a specific service:**
+
+    ```bash
+    docker compose logs -f qbittorrent
+    ```
+
+    *(Replace `qbittorrent` with any other service name. The `-f` flag follows the log in real-time.)*
+
+  * **Update your applications:**
+
+    ```bash
+    docker compose pull && docker compose up -d
+    ```
+
+    *(This pulls the latest versions of all images and restarts the containers.)*
+
+-----
+
+## 3\. Initial Application Configuration
+
+After starting the stack for the first time, you need to configure each service.
+
+> **IMPORTANT NETWORKING NOTE:**
+> In our setup, only the download clients (`qbittorrent`, `nzbget`) are on the VPN network. All other apps (`prowlarr`, `sonarr`, `radarr`, etc.) are on the default Docker network. This means that when one application needs to talk to another, you **must use your server's main IP address** (e.g., `192.168.1.100`). Do not use `localhost` or the container name. You can find your server's IP by running the `ip a` command.
+
+Access each service below by replacing `YOUR_SERVER_IP` with your actual server IP address.
+
+-----
+
+### **qBittorrent**
+
+  * **URL:** `http://YOUR_SERVER_IP:8080`
+
+<!-- end list -->
+
+1.  **Find Temp Password:** Check the logs to get your initial password: `docker compose logs qbittorrent`. Look for the temporary password line. The username is `admin`.
+2.  **Log In & Change Password:** Go to `Tools -> Options... -> Web UI` and set a new, permanent username and password.
+3.  **Set Download Paths:** Go to the `Downloads` tab:
+      * **Default Save Path:** `/downloads/complete`
+      * Check **Keep incomplete torrents in:** and set the path to `/downloads/incomplete`
+4.  Click **Save**.
+
+-----
+
+### **Prowlarr**
+
+  * **URL:** `http://YOUR_SERVER_IP:9696`
+
+<!-- end list -->
+
+1.  **Setup:** Set a username and password on first launch.
+2.  **Add Download Client:**
+      * Go to `Settings -> Download Clients` and click `+` to add a new one.
+      * Choose **qBittorrent**.
+      * **Host:** Enter your server's IP address (e.g., `192.168.1.100`).
+      * **Port:** `8080`
+      * Enter the username and password you just set for qBittorrent.
+      * Click `Test` to ensure it works, then `Save`.
+3.  **Add Indexers:** Go to the `Indexers` page and add your preferred torrent indexer sites.
+
+-----
+
+### **Sonarr (for TV Shows)**
+
+  * **URL:** `http://YOUR_SERVER_IP:8989`
+
+<!-- end list -->
+
+1.  **Connect Download Client:** Go to `Settings -> Download Clients`, add qBittorrent, and configure it exactly as you did in Prowlarr (using the server IP).
+2.  **Add Root Folder:** Go to `Settings -> Media Management` and add a Root Folder pointing to `/data/tvshows`.
+3.  **Connect to Prowlarr:** Go to `Settings -> Indexers`, click `+`, choose `Add Indexer from Prowlarr`, and follow the prompts.
+
+-----
+
+### **Sonarr-Anime (for Anime)**
+
+  * **URL:** `http://YOUR_SERVER_IP:8990`
+
+<!-- end list -->
+
+1.  **Connect Download Client:** Repeat the same steps as the first Sonarr to connect to qBittorrent (using the server IP).
+2.  **CRITICAL ANIME SETTING:** Go to `Settings -> Media Management`. Click **"Show Advanced"** at the top. Under the "Series" section, change the **Series Type** from "Standard" to **"Anime"**. This is essential for correct processing.
+3.  **Add Root Folder:** Add a Root Folder pointing to `/data/anime`.
+4.  **Connect to Prowlarr:** Connect this Sonarr instance to Prowlarr just like you did with the first one.
+
+-----
+
+### **Radarr (for Movies)**
+
+  * **URL:** `http://YOUR_SERVER_IP:7878`
+  * Follow the same logic as Sonarr: connect your download client (qBittorrent via server IP), set your Root Folder to `/data/movies`, and connect to Prowlarr for indexers.
+
+-----
+
+### **Emby**
+
+  * **URL:** `http://YOUR_SERVER_IP:8096`
+
+<!-- end list -->
+
+1.  **First-Time Setup:** Walk through the initial setup wizard to create your admin user.
+2.  **Add Your Libraries:**
+      * In the Emby dashboard, go to `Settings (the gear icon) -> Library`.
+      * Click **+ Add Library**.
+      * **For TV Shows:** Select "TV Shows" as content type, name it "TV Shows", and add the folder path `/data/tvshows`.
+      * **For Movies:** Select "Movies" as content type, name it "Movies", and add the folder path `/data/movies`.
+      * **For Anime:** Select "TV Shows" as content type, name it "Anime", and add the folder path `/data/anime`.
+
+-----
+
+### **Other Services**
+
+  * **Homarr (Dashboard):** `http://YOUR_SERVER_IP:7575`
+  * **Bazarr (Subtitles):** `http://YOUR_SERVER_IP:6767`
+  * **Jellyseerr (Requests):** `http://YOUR_SERVER_IP:5055`
+  * **RDT-Client (Real-Debrid):** `http://YOUR_SERVER_IP:6500`
+
+
+
+
+
+
+
+
+
+
+
+
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+############################################################################################################################################################################################################################################################
+
 ### Useful Links:
 - [Servarr Wiki](https://wiki.servarr.com/)
 - [Trash Guides](https://trash-guides.info/)
