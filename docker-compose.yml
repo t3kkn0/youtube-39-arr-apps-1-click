@@ -34,7 +34,9 @@ services:
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - OPENVPN_RESOLVE_HOSTNAME=on
       - OPENVPN_PROTOCOL=tcp
-      - FIREWALL_LOCAL_SUBNETS=192.168.1.0/24,10.20.10.0/24
+      - FIREWALL_LOCAL_SUBNETS=192.168.1.0/24
+      - DOT=on
+      - DOT_PROVIDERS=quad9
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
