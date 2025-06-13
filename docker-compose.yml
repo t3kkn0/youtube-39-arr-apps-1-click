@@ -1,16 +1,14 @@
 services:
-
-
 #  ██████╗ ██╗      ██╗   ██╗███████╗████████╗██╗   ██╗███╗   ██╗
 # ██╔════╝ ██║      ██║   ██║██╔════╝╚══██╔══╝██║   ██║████╗  ██║
 # ██║  ███╗██║      ██║   ██║█████╗     ██║   ██║   ██║██╔██╗ ██║
 # ██║   ██║██║      ██║   ██║██╔══╝     ██║   ██║   ██║██║╚██╗██║
 # ╚██████╔╝███████╗╚██████╔╝███████╗   ██║   ╚██████╔╝██║ ╚████║
 #  ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝
- gluetun:
-  image: qmcgaw/gluetun
-  container_name: gluetun
-  ports:
+  gluetun:
+    image: qmcgaw/gluetun
+    container_name: gluetun
+    ports:
       - 6789:6789     # NZBGet
       # - 9696:9696   # Prowlarr - Port is on the service itself
       # - 8989:8989   # Sonarr - Port is on the service itself
@@ -24,30 +22,20 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     volumes:
-      # This mounts your local config folder into the container
       - ./gluetun-config:/gluetun
     environment:
-      # --- VPN Service Provider Settings ---
       - VPN_SERVICE_PROVIDER=custom
       - VPN_TYPE=openvpn
-      # --- OpenVPN Settings for Custom Provider ---
       - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
-      # --- Your FastVPN Credentials (will be read from .env file) ---
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
     restart: unless-stopped
-
-
-
-
-
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
 # ████╗  ██║╚══███╔╝██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
 # ██╔██╗ ██║  ███╔╝ ██████╔╝██║  ███╗█████╗     ██║
 # ██║╚██╗██║ ███╔╝  ██╔══██╗██║   ██║██╔══╝     ██║
 # ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗   ██║
 # ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝   ╚═╝
-
   nzbget:
     image: lscr.io/linuxserver/nzbget:latest
     container_name: nzbget
@@ -99,6 +87,7 @@ services:
 # ██╔══██╗  ██╔══██╗   ██║
 # ██║  ████╗██████╔╝   ██║
 # ╚═╝  ╚═══╝╚═════╝    ╚═╝
+
   rdt-client:
     image: rogerfar/rdt-client:latest
     container_name: rdt-client
@@ -109,7 +98,7 @@ services:
       - 6500:6500
     restart: unless-stopped
     env_file:
-  - '.env'
+      - '.env'
 
 
 
