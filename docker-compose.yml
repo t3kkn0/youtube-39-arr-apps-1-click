@@ -29,11 +29,11 @@ services:
     environment:
       - VPN_SERVICE_PROVIDER=custom
       - VPN_TYPE=openvpn
-      - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-UDP.ovpn
+      - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
       - OPENVPN_RESOLVE_HOSTNAME=on
-      - OPENVPN_PROTOCOL=udp
+      - OPENVPN_PROTOCOL=tcp
       - FIREWALL_LOCAL_SUBNETS=192.168.1.0/24
       - DOT=off
       - DOT_PROVIDERS=quad9
