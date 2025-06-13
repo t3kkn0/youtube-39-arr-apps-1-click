@@ -9,7 +9,7 @@ services:
     image: qmcgaw/gluetun
     container_name: gluetun
     ports:
-###      - 6789:6789      # NZBGet
+      - 6789:6789      # NZBGet
       # - 9696:9696    # Prowlarr - Port is on the service itself
       # - 8989:8989    # Sonarr - Port is on the service itself
       # - 7878:7878    # Radarr - Port is on the service itself
