@@ -9,9 +9,9 @@ services:
     image: qmcgaw/gluetun
     container_name: gluetun
     ports:
-      - 8888:8888/tcp # HTTP proxy
-      - 8388:8388/tcp # Shadowsocks
-      - 8388:8388/udp # Shadowsocks
+     # - 8888:8888/tcp # HTTP proxy
+    #  - 8388:8388/tcp # Shadowsocks
+    #  - 8388:8388/udp # Shadowsocks
       - 6789:6789      # NZBGet
       # - 9696:9696    # Prowlarr - Port is on the service itself
       # - 8989:8989    # Sonarr - Port is on the service itself
