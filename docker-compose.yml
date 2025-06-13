@@ -21,6 +21,9 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     volumes:
       - ./gluetun-config:/gluetun
     environment:
@@ -29,7 +32,6 @@ services:
       - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-      - DOT_DNS_ADDRESS=1.1.1.1 # <--- ADD THIS LINE
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
