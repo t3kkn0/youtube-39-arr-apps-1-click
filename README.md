@@ -53,6 +53,34 @@ sudo mkdir -p \
 /mnt/NAS-DATA/Sonarr-Anime/config \
 /mnt/NAS-DATA/Sonarr-Anime/anime
 
+
+
+DESTROY FOLDERS!!!!!!!
+
+
+sudo rm -rf \
+/mnt/NAS-DATA/Downloads/complete \
+/mnt/NAS-DATA/Downloads/incomplete \
+/mnt/NAS-DATA/nzbget/config \
+/mnt/NAS-DATA/qbittorrent/config \
+/mnt/NAS-DATA/rdt-client/config \
+/mnt/NAS-DATA/Prowlarr/config \
+/mnt/NAS-DATA/Prowlarr/backup \
+/mnt/NAS-DATA/Sonarr/config \
+/mnt/NAS-DATA/Sonarr/backup \
+/mnt/NAS-DATA/Sonarr/tvshows \
+/mnt/NAS-DATA/Radarr/config \
+/mnt/NAS-DATA/Radarr/backup \
+/mnt/NAS-DATA/Radarr/movies \
+/mnt/NAS-DATA/Bazarr/config \
+/mnt/NAS-DATA/Homarr/configs \
+/mnt/NAS-DATA/Homarr/data \
+/mnt/NAS-DATA/Homarr/icons \
+/mnt/NAS-DATA/JellySeerr/config \
+/mnt/NAS-DATA/Emby/config \
+/mnt/NAS-DATA/Sonarr-Anime/config \
+/mnt/NAS-DATA/Sonarr-Anime/anime
+
 # Enter your project directory (use the actual name of your repo)
 cd your-private-repo
 
