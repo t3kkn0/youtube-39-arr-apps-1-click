@@ -22,8 +22,8 @@ services:
     devices:
       - /dev/net/tun:/dev/net/tun
     dns:
-      - 1.1.1.1
       - 8.8.8.8
+      - 1.1.1.1
     volumes:
       - ./gluetun-config:/gluetun
     environment:
@@ -37,6 +37,7 @@ services:
       - FIREWALL_LOCAL_SUBNETS=192.168.1.0/24
       - DOT=on
       - DOT_PROVIDERS=quad9
+      - DNS_ADDRESS=8.8.8.8
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
