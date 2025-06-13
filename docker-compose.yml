@@ -32,6 +32,7 @@ services:
       - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - DNS_ADDRESS=8.8.8.8
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
