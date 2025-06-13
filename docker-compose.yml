@@ -88,8 +88,8 @@ services:
     environment:
       - WEBUI_PORT=8080
       - TORRENTING_PORT=6881
-      - PUID=1000
-      - PGID=1000
+      - PUID=1026
+      - PGID=100
     healthcheck:
       start_period: 15s
     env_file:
