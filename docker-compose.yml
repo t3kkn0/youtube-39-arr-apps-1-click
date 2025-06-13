@@ -23,12 +23,19 @@ services:
       - NET_ADMIN
     devices:
       - /dev/net/tun:/dev/net/tun
+    volumes:
+      # This mounts your local config folder into the container
+      - ./gluetun-config:/gluetun
     environment:
-      - VPN_SERVICE_PROVIDER=privado
-      - VPN_TYPE=wireguard
-      - OPENVPN_USER=nhtkryxkftml
-      - OPENVPN_PASSWORD=4UjRo>T!*^m=
-      - SERVER_COUNTRIES=Netherlands
+      # --- VPN Service Provider Settings ---
+      - VPN_SERVICE_PROVIDER=custom
+      - VPN_TYPE=openvpn
+      # --- OpenVPN Settings for Custom Provider ---
+      - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
+      # --- Your FastVPN Credentials (will be read from .env file) ---
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+    restart: unless-stopped
 
 
 
