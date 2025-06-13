@@ -4,6 +4,9 @@
 - [Ascii ART](https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow)
 
 ### Download and unzip Files from GitHub:
+
+git clone https://github.com/t3kkn0/youtube-39-arr-apps-1-click.git
+
 https://github.com/automation-avenue/youtube-39-arr-apps-1-click <br />
 cd /home/marek/Downloads <br />
 unzip youtube-39-arr-apps-1-click <br />
