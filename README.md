@@ -7,6 +7,16 @@
 
 git clone https://github.com/t3kkn0/youtube-39-arr-apps-1-click.git
 
+cd my-private-arr-stack
+
+nano .env
+
+OPENVPN_USER=YOUR_FASTVPN_USERNAME
+OPENVPN_PASSWORD=YOUR_FASTVPN_PASSWORD
+
+Ctrl + X 
+
+
 https://github.com/automation-avenue/youtube-39-arr-apps-1-click <br />
 cd /home/marek/Downloads <br />
 unzip youtube-39-arr-apps-1-click <br />
