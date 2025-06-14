@@ -21,7 +21,7 @@ Clone **your own private repository** (not the public template) to your server. 
 
 ```bash
 # Replace with the actual URL from your private GitHub repo
-git clone https://github.com/YourUsername/your-private-repo.git
+git clone https://github.com/t3kkn0/Arr-Stack.git
 ```
 
 ### Step 2.2: Create the Directory Structure
@@ -82,7 +82,7 @@ sudo rm -rf \
 /mnt/NAS-DATA/Sonarr-Anime/anime
 
 # Enter your project directory (use the actual name of your repo)
-cd your-private-repo
+cd Arr-stack
 
 # Create the gluetun config folder here
 mkdir gluetun-config
@@ -96,7 +96,8 @@ mv *.ovpn gluetun-config/
 This command ensures the applications running in Docker have permission to read and write to your NAS storage. It uses the `PUID` and `PGID` from your `.env` file.
 
 ```bash
-sudo chown -R 1000:1000 /mnt/NAS-DATA/
+sudo chown -R 1026:100 /mnt/NAS-DATA/
+sudo chmod -R 775 /mnt/NAS-DATA/
 ```
 
 ### Step 2.4: Create the Local Secrets File
@@ -110,8 +111,8 @@ While inside your project directory, create the `.env` file that will contain al
     ARRPATH=/mnt/NAS-DATA/
 
     # Global Variables
-    PUID=1000
-    PGID=1000
+    PUID=1026
+    PGID=100
     TZ=Europe/Warsaw
 
     # --- Gluetun VPN Credentials ---
