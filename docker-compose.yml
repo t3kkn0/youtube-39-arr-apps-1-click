@@ -60,7 +60,7 @@ services:
     network_mode: "service:gluetun"
     environment:
       - NZBGET_USER=admin #optional
-      - NZBGET_PASS=J@77113 #optional
+      - NZBGET_PASS=admin #optional
     volumes:
       - nzbget_config:/config
       - downloads:/downloads
@@ -84,7 +84,6 @@ services:
     volumes:
       - qbittorrent_config:/config
       - downloads:/downloads
-      - qbittorrent_cache:/config/.cache/qBittorrent
     environment:
       - WEBUI_PORT=8080
       - TORRENTING_PORT=6881
@@ -361,6 +360,9 @@ services:
     env_file:
       - '.env'
 
+
+
+
 volumes:
   prowlarr_config:
     driver_opts:
@@ -463,8 +465,5 @@ volumes:
       o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DATA/Emby/config"
 
-  qbittorrent_cache:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/qbittorrent-cache"
+
+
