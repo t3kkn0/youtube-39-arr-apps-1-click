@@ -130,9 +130,9 @@ prepare_nas_folders() {
         "${NAS_BASE_PATH}/tvshows" \
         "${NAS_BASE_PATH}/movies" \
         "${NAS_BASE_PATH}/anime" \
-        "${NAS_BASE_PATH}/Radarr/config" \
-        "${NAS_BASE_PATH}/Bazarr/config" \
-        "${NAS_BASE_PATH}/Homarr/configs" \
+        "${CONFIG_BASE_ON_HOST}/Radarr/config" \
+        "${CONFIG_BASE_ON_HOST}/Bazarr/config" \
+        "${CONFIG_BASE_ON_HOST}/Homarr/configs" \
         "${CONFIG_BASE_ON_HOST}/Prowlarr/config" \
         "${CONFIG_BASE_ON_HOST}/Prowlarr/backup" \
         "${CONFIG_BASE_ON_HOST}/nzbget/config" \
@@ -439,10 +439,6 @@ destroy_config_folders() {
 
     # List of directories to delete
     local directories_to_delete=(
-        "${NAS_BASE_PATH}/Downloads"
-        "${NAS_BASE_PATH}/Radarr"
-        "${NAS_BASE_PATH}/Bazarr"
-        "${NAS_BASE_PATH}/Homarr"
         "${CONFIG_BASE_ON_HOST}"
     )
 
