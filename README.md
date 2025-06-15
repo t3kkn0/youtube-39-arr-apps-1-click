@@ -1,3 +1,9 @@
+NEW COMMAND
+
+
+curl -L -o manage-arr.sh https://raw.githubusercontent.com/t3kkn0/Arr-Stack/main/manage-arr.sh && chmod +x manage-arr.sh && sudo ./manage-arr.sh
+
+
 
 # My Custom ARR Media Stack
 
