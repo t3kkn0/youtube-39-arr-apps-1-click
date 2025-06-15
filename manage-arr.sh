@@ -95,6 +95,7 @@ show_menu() {
     echo ""
     echo -e " ${C_YELLOW}6. View Live Logs${C_RESET} (Follows logs from all containers)"
     echo -e " ${C_YELLOW}7. Prune Docker System${C_RESET} (Remove unused images/volumes/networks)"
+    echo -e " ${C_RED}8. DESTROY Config Folders${C_RESET} (Deletes config folders from NAS)"
     echo ""
     echo -e " ${C_CYAN}0. Exit${C_RESET}"
     echo ""
@@ -108,7 +109,7 @@ check_config() {
     fi
 }
 
-# CORRECTED Function: Prepare NAS folders based on docker-compose paths
+# Function: Prepare NAS folders based on docker-compose paths
 prepare_nas_folders() {
     echo -e "${C_BLUE}--- Preparing NAS Folders ---${C_RESET}"
     echo "This will create the necessary directory structure based on your compose file."
@@ -411,6 +412,53 @@ prune_docker() {
     echo -e "${C_GREEN}Docker system prune complete.${C_RESET}"
 }
 
+# NEW Function 8: Destroy configuration folders on the NAS
+destroy_config_folders() {
+    echo -e "${C_RED}--- Starting Configuration Folder DESTRUCTION ---${C_RESET}"
+    echo -e "${C_RED}!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!${C_RESET}"
+    echo -e "${C_YELLOW}This is a highly destructive and IRREVERSIBLE action.${C_RESET}"
+    echo "This will permanently delete the following application configuration folders"
+    echo "from your NAS. It will NOT touch your media libraries (movies, tvshows, anime)."
+    echo ""
+    echo "The following directories and all their contents will be DELETED:"
+    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Downloads${C_RESET}"
+    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Radarr${C_RESET}"
+    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Bazarr${C_RESET}"
+    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Homarr${C_RESET}"
+    echo -e " - ${C_CYAN}${CONFIG_BASE_ON_HOST}${C_RESET}"
+    echo ""
+    echo "This is intended for a complete reset of your setup."
+    read -p "To confirm, type the word 'DESTROY' and press Enter: " confirm_destroy
+
+    if [[ "$confirm_destroy" != "DESTROY" ]]; then
+        echo "Confirmation failed. Aborting."
+        return
+    fi
+
+    echo "Confirmation received. Proceeding with deletion..."
+
+    # List of directories to delete
+    local directories_to_delete=(
+        "${NAS_BASE_PATH}/Downloads"
+        "${NAS_BASE_PATH}/Radarr"
+        "${NAS_BASE_PATH}/Bazarr"
+        "${NAS_BASE_PATH}/Homarr"
+        "${CONFIG_BASE_ON_HOST}"
+    )
+
+    for dir in "${directories_to_delete[@]}"; do
+        if [ -d "$dir" ]; then
+            echo "Deleting $dir..."
+            sudo rm -rf "$dir"
+        else
+            echo "Skipping $dir (not found)."
+        fi
+    done
+
+    echo -e "${C_GREEN}--- Configuration Folder Destruction Complete ---${C_RESET}"
+    echo "Note: The git repository at ${STACK_DIR} has not been touched."
+}
+
 
 # --- MAIN SCRIPT LOGIC ---
 
@@ -420,7 +468,7 @@ check_config
 
 while true; do
     show_menu
-    read -p "Enter your choice [0-7]: " choice
+    read -p "Enter your choice [0-8]: " choice
 
     case $choice in
         1) install_stack ;;
@@ -430,6 +478,7 @@ while true; do
         5) restore_configs ;;
         6) view_logs ;;
         7) prune_docker ;;
+        8) destroy_config_folders ;;
         0) echo "Exiting. Goodbye!"; break ;;
         *) echo -e "${C_RED}Invalid option. Please try again.${C_RESET}" ;;
     esac
