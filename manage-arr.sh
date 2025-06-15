@@ -67,6 +67,7 @@ fi
 # --- FUNCTIONS ---
 
 # Function to check for required dependencies
+# Function to check for required dependencies
 check_dependencies() {
     local missing_deps=()
     # yq is now required for dynamic folder creation
@@ -77,10 +78,39 @@ check_dependencies() {
     done
 
     if [ ${#missing_deps[@]} -ne 0 ]; then
-        echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}.${C_RESET}"
-        echo -e "${C_YELLOW}Please install them and try again. 'yq' is a command-line YAML processor.${C_RESET}"
+        echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}${C_RESET}"
+
+        # --- NEW: Helper block to suggest installation ---
+        if [[ " ${missing_deps[*]} " =~ " yq " ]]; then
+            echo -e "${C_YELLOW}This script requires 'yq' (v4+, by Mike Farah) to manage folders dynamically.${C_RESET}"
+            echo -e "${C_BLUE}Attempting to detect your package manager to provide installation instructions...${C_RESET}"
+            
+            local install_cmd=""
+            if command -v apt-get &> /dev/null; then
+                install_cmd="sudo apt update && sudo apt install yq"
+            elif command -v dnf &> /dev/null; then
+                install_cmd="sudo dnf install yq"
+            elif command -v pacman &> /dev/null; then
+                install_cmd="sudo pacman -S yq"
+            elif command -v brew &> /dev/null; then
+                install_cmd="brew install yq"
+            fi
+
+            if [ -n "$install_cmd" ]; then
+                echo -e "${C_GREEN}To install 'yq' on your system, please run the following command:${C_RESET}"
+                echo -e "    ${C_CYAN}$install_cmd${C_RESET}"
+            else
+                echo -e "${C_YELLOW}Could not detect a common package manager.${C_RESET}"
+                echo -e "Please install 'yq' manually. It is a command-line YAML processor by Mike Farah."
+                echo -e "You can find it here: ${C_CYAN}https://github.com/mikefarah/yq/${C_RESET}"
+            fi
+            echo -e "After installation, please re-run this script."
+        fi
+        # --- End of helper block ---
+        
         exit 1
     fi
+
     # Also check for Docker Compose v2 compatibility
     if ! docker compose version &> /dev/null; then
         echo -e "${C_RED}Error: This script requires Docker Compose V2 (the 'docker compose' command).${C_RESET}"
