@@ -8,14 +8,12 @@ set -u
 set -o pipefail
 
 #================================================================================#
-#     Arr-Stack Management Script by t3kkn0 (Improved Version)         #
+#     Arr-Stack Management Script by t3kkn0 (Simplified Version)         #
 #================================================================================#
 #  This script helps manage the Arr-Stack docker deployment.           #
 #  - Clones the repository if it doesn't exist.                      #
 #  - Provides a menu for installation, uninstallation, updates, and backups.    #
-#  - Dynamically creates folders based on docker-compose.yml.          #
-#  - Dynamically sets permissions based on your .env file.             #
-#  - Includes safety checks and improved error handling.                 #
+#  - Uses a hardcoded list of paths for setup clarity and simplicity.      #
 #================================================================================#
 
 # --- BEGIN CONFIGURATION ---
@@ -69,45 +67,18 @@ fi
 # Function to check for required dependencies
 check_dependencies() {
     local missing_deps=()
-    # yq is for parsing, curl is for the online fallback
-    for dep in git docker yq curl; do
+    # Check for only the essential programs
+    for dep in git docker; do
         if ! command -v "$dep" &> /dev/null; then
             missing_deps+=("$dep")
         fi
     done
 
     if [ ${#missing_deps[@]} -ne 0 ]; then
-        echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}${C_RESET}"
-
-        # --- Helper block to suggest installation ---
-        if printf '%s\n' "${missing_deps[@]}" | grep -q -w "yq"; then
-            echo -e "${C_YELLOW}This script requires 'yq' (v4+, by Mike Farah) to manage folders dynamically.${C_RESET}"
-        fi
-        if printf '%s\n' "${missing_deps[@]}" | grep -q -w "curl"; then
-            echo -e "${C_YELLOW}This script requires 'curl' to download the compose file from GitHub as a fallback.${C_RESET}"
-        fi
-
-        local install_cmd=""
-        if command -v apt-get &> /dev/null; then
-            install_cmd="sudo apt update && sudo apt install yq curl"
-        elif command -v dnf &> /dev/null; then
-            install_cmd="sudo dnf install yq curl"
-        elif command -v pacman &> /dev/null; then
-            install_cmd="sudo pacman -S yq curl"
-        elif command -v brew &> /dev/null; then
-            install_cmd="brew install yq curl"
-        fi
-
-        if [ -n "$install_cmd" ]; then
-            echo -e "${C_GREEN}To install missing dependencies, please run the following command:${C_RESET}"
-            echo -e "    ${C_CYAN}$install_cmd${C_RESET}"
-        else
-            echo -e "${C_YELLOW}Could not detect a common package manager. Please install missing packages manually.${C_RESET}"
-        fi
-        echo -e "After installation, please re-run this script."
+        echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}.${C_RESET}"
+        echo -e "${C_YELLOW}Please install them and try again.${C_RESET}"
         exit 1
     fi
-
     # Also check for Docker Compose v2 compatibility
     if ! docker compose version &> /dev/null; then
         echo -e "${C_RED}Error: This script requires Docker Compose V2 (the 'docker compose' command).${C_RESET}"
@@ -115,7 +86,6 @@ check_dependencies() {
         exit 1
     fi
 }
-
 
 
 # Function to display the main menu
@@ -148,10 +118,10 @@ check_config() {
     fi
 }
 
-# Function: Prepare NAS folders dynamically, with online fallback
+# Function: Prepare NAS folders using a hardcoded list
 prepare_nas_folders() {
     echo -e "${C_BLUE}--- Preparing NAS Folders ---${C_RESET}"
-    echo "This will create directory structures based on your compose file."
+    echo "This will create a predefined list of directories and set their permissions."
     echo "This script assumes you are running it with sufficient privileges (e.g., sudo)."
     read -p "Do you want to continue? [Y/n]: " confirm
 
@@ -160,61 +130,34 @@ prepare_nas_folders() {
         return
     fi
 
-    local host_paths=""
-    local compose_source_msg=""
+    # --- Create Directories (one by one for clarity) ---
+    echo "Creating media, download, and application config directories..."
+    sudo mkdir -p "${NAS_BASE_PATH}/Downloads/complete"
+    sudo mkdir -p "${NAS_BASE_PATH}/Downloads/incomplete"
+    sudo mkdir -p "${NAS_BASE_PATH}/tvshows"
+    sudo mkdir -p "${NAS_BASE_PATH}/movies"
+    sudo mkdir -p "${NAS_BASE_PATH}/anime"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Radarr/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Radarr/backup"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Sonarr/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Sonarr/backup"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Sonarr-Anime/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Bazarr/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Prowlarr/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Prowlarr/backup"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/nzbget/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/qbittorrent/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/rdt-client/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Homarr/configs"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Homarr/icons"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Homarr/data"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Jellyseerr/config"
+    sudo mkdir -p "${CONFIG_BASE_ON_HOST}/Emby/config"
 
-    # --- Method 1: Try to find local compose file first (Preferred) ---
-    local compose_file=""
-    if [ -f "$STACK_DIR/docker-compose.yml" ]; then
-        compose_file="$STACK_DIR/docker-compose.yml"
-    elif [ -f "$STACK_DIR/compose.yml" ]; then
-        compose_file="$STACK_DIR/compose.yml"
-    fi
-
-    if [ -n "$compose_file" ]; then
-        compose_source_msg="${C_GREEN}Using local compose file: $compose_file${C_RESET}"
-        host_paths=$(yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]' "$compose_file")
-    else
-        # --- Method 2: Fallback to downloading from GitHub ---
-        compose_source_msg="${C_YELLOW}Warning: Local compose file not found. Falling back to online version from GitHub.${C_RESET}"
-        
-        local raw_url_base
-        raw_url_base=$(echo "$REPO_URL" | sed 's/\.git$//' | sed 's|github.com|raw.githubusercontent.com|')/main
-        
-        local online_content
-        online_content=$(curl -sSL "$raw_url_base/docker-compose.yml")
-        
-        if [ -z "$online_content" ] || [[ "$online_content" == *"404: Not Found"* ]]; then
-            online_content=$(curl -sSL "$raw_url_base/compose.yml")
-        fi
-        
-        if [ -n "$online_content" ] && [[ "$online_content" != *"404: Not Found"* ]]; then
-            host_paths=$(echo "$online_content" | yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]')
-        fi
-    fi
-    
-    echo -e "$compose_source_msg"
-    
-    # --- Final Check: If both methods failed, exit. ---
-    if [ -z "$host_paths" ]; then
-        echo -e "${C_RED}Error: Failed to read compose file from both local and online sources. Cannot prepare folders.${C_RESET}"
-        return 1
-    fi
-
-    echo "Creating directories..."
-    # The '|| true' prevents the loop from failing if host_paths is empty after parsing
-    for path in $host_paths; do
-        if [[ "$path" == "$CONFIG_BASE_ON_HOST"* || "$path" == "$NAS_BASE_PATH"* ]]; then
-            echo "  Ensuring directory exists: $path"
-            sudo mkdir -p "$path"
-        else
-            echo "  Skipping path outside defined scope: $path"
-        fi
-    done || true
-
-    # --- Set Permissions (as before) ---
-    local puid=1000
-    local pgid=1000
+    # --- Set Permissions ---
+    # Get PUID/PGID from the .env file to set correct ownership
+    local puid=1000 # Default PUID
+    local pgid=1000 # Default PGID
     if [ -f "$STACK_DIR/.env" ]; then
         PUID_VAL=$(grep -E '^\s*PUID=' "$STACK_DIR/.env" | cut -d'=' -f2)
         PGID_VAL=$(grep -E '^\s*PGID=' "$STACK_DIR/.env" | cut -d'=' -f2)
@@ -222,14 +165,28 @@ prepare_nas_folders() {
         if [ -n "$PGID_VAL" ]; then pgid=$PGID_VAL; fi
     fi
 
-    echo "Setting permissions for ${CONFIG_BASE_ON_HOST} to User ${puid} / Group ${pgid}..."
-    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}"
-
-    echo "Setting permissions for media/download folders on ${NAS_BASE_PATH}..."
-    if [ -d "${NAS_BASE_PATH}/Downloads" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/Downloads"; fi
-    if [ -d "${NAS_BASE_PATH}/tvshows" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/tvshows"; fi
-    if [ -d "${NAS_BASE_PATH}/movies" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/movies"; fi
-    if [ -d "${NAS_BASE_PATH}/anime" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/anime"; fi
+    echo "Setting ownership for all stack-related data to User ${puid} / Group ${pgid}..."
+    # Set ownership on each directory individually for maximum clarity.
+    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/Downloads"
+    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/tvshows"
+    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/movies"
+    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/anime"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Radarr/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Radarr/backup"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Sonarr/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Sonarr/backup"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Sonarr-Anime/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Bazarr/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Prowlarr/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Prowlarr/backup"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/nzbget/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/qbittorrent/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/rdt-client/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Homarr/configs"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Homarr/icons"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Homarr/data"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Jellyseerr/config"
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}/Emby/config"
 
     echo -e "${C_GREEN}--- NAS Folder Preparation Complete ---${C_RESET}"
 }
@@ -280,7 +237,7 @@ install_stack() {
         fi
     fi
 
-    # --- Prepare NAS folders (now uses dynamic logic) ---
+    # --- Prepare NAS folders (now uses hardcoded logic) ---
     prepare_nas_folders
 
     # --- Start Containers ---
