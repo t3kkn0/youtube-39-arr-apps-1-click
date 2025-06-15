@@ -67,7 +67,6 @@ fi
 # --- FUNCTIONS ---
 
 # Function to check for required dependencies
-# Function to check for required dependencies
 check_dependencies() {
     local missing_deps=()
     # yq is now required for dynamic folder creation
@@ -81,7 +80,8 @@ check_dependencies() {
         echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}${C_RESET}"
 
         # --- NEW: Helper block to suggest installation ---
-        if [[ " ${missing_deps[*]} " =~ " yq " ]]; then
+        # This check is now POSIX-compliant and works in 'sh' and 'bash'
+        if printf '%s\n' "${missing_deps[@]}" | grep -q -w "yq"; then
             echo -e "${C_YELLOW}This script requires 'yq' (v4+, by Mike Farah) to manage folders dynamically.${C_RESET}"
             echo -e "${C_BLUE}Attempting to detect your package manager to provide installation instructions...${C_RESET}"
             
@@ -118,7 +118,6 @@ check_dependencies() {
         exit 1
     fi
 }
-
 
 # Function to display the main menu
 show_menu() {
