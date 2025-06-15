@@ -82,7 +82,7 @@ show_menu() {
     echo -e "${C_CYAN}=============================================${C_RESET}"
     echo -e " Stack is located at: ${C_YELLOW}${STACK_DIR}${C_RESET}"
     echo ""
-    echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Clones repo, copies .env, and starts containers)"
+    echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Clones/Pulls repo, copies .env, and starts containers)"
     echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers)"
     echo -e " ${C_BLUE}3. Reload Stack${C_RESET} (Pulls latest from Git & Docker, then restarts)"
     echo ""
@@ -108,49 +108,43 @@ check_config() {
 install_stack() {
     echo -e "${C_BLUE}--- Starting Stack Installation ---${C_RESET}"
 
-    # Clone the repo if the directory doesn't exist
+    # --- CORRECTED LOGIC: Clone if new, otherwise pull for updates. ---
     if [ ! -d "$STACK_DIR" ]; then
         echo "Directory $STACK_DIR not found. Cloning repository..."
         git clone "$REPO_URL" "$STACK_DIR"
     else
-        echo "Stack directory already exists. Skipping clone."
+        echo "Stack directory already exists. Pulling latest changes from repository..."
+        cd "$STACK_DIR"
+        git pull
+        cd - > /dev/null # Go back to previous directory silently
     fi
 
-    # --- New .env handling logic ---
+    # --- CORRECTED LOGIC: Find .env from master path, or fall back to repository's version. ---
     if [ -f "$ENV_SOURCE_PATH" ]; then
         # Preferred path: The user's master .env file exists.
         echo "Master .env file found. Copying it to the stack directory..."
         cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
     else
-        # Fallback path: Master .env not found, let's try to create one from a sample.
+        # Fallback path: Master .env not found, let's use the one from the repository.
         echo -e "${C_YELLOW}Warning: Master .env file not found at '$ENV_SOURCE_PATH'.${C_RESET}"
-        echo "Checking for a sample file in the repository to use as a template..."
         
-        local sample_env_path=""
-        if [ -f "$STACK_DIR/.env.sample" ]; then
-            sample_env_path="$STACK_DIR/.env.sample"
-        elif [ -f "$STACK_DIR/.env.example" ]; then
-            sample_env_path="$STACK_DIR/.env.example"
-        fi
-
-        if [ -n "$sample_env_path" ]; then
-            echo "Found sample file: '$sample_env_path'"
-            echo "Copying sample to create a new .env in the stack directory..."
-            cp "$sample_env_path" "$STACK_DIR/.env"
+        local repo_env_path="$STACK_DIR/.env"
+        if [ -f "$repo_env_path" ]; then
+            echo "Found .env file in the repository. Using it as a template."
             
-            echo "Saving a copy of this new .env to your master location for future use..."
+            echo "Saving a copy to your master location for future use..."
             mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
-            cp "$STACK_DIR/.env" "$ENV_SOURCE_PATH"
+            cp "$repo_env_path" "$ENV_SOURCE_PATH"
             
             echo -e "\n${C_RED}================== ACTION REQUIRED ==================${C_RESET}"
-            echo -e "${C_YELLOW}A sample .env file was used. You MUST edit the file at:${C_RESET}"
+            echo -e "${C_YELLOW}A template .env file was copied from the repository. You MUST edit the file at:${C_RESET}"
             echo -e "${C_CYAN}$ENV_SOURCE_PATH${C_RESET}"
-            echo -e "${C_YELLOW}with your correct paths and settings before the stack will work properly!${C_RESET}"
+            echo -e "${C_YELLOW}with your correct paths and settings (like TZ, PUID, PGID) before the stack will work properly!${C_RESET}"
             echo -e "${C_RED}=====================================================${C_RESET}\n"
             read -p "Press Enter to continue the installation, or CTRL+C to exit and edit the file now."
         else
-            # Error path: No master file and no sample file found.
-            echo -e "${C_RED}Error: No master .env file was found and no sample could be located in the repository.${C_RESET}"
+            # Error path: No master file and no .env file in the repository.
+            echo -e "${C_RED}Error: No master .env file was found and no .env could be located in the repository.${C_RESET}"
             echo -e "${C_YELLOW}Please create a .env file at '$ENV_SOURCE_PATH' and run the script again.${C_RESET}"
             return 1
         fi
@@ -380,7 +374,7 @@ while true; do
         1) install_stack ;;
         2) uninstall_stack ;;
         3) reload_stack ;;
-        4) backup_configs ;;
+        4. Backup Configuration) backup_configs ;;
         5) restore_configs ;;
         6) view_logs ;;
         7) prune_docker ;;
