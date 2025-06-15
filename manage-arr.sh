@@ -8,12 +8,13 @@ set -u
 set -o pipefail
 
 #================================================================================#
-#         Arr-Stack Management Script by t3kkn0 (Improved Version)               #
+#     Arr-Stack Management Script by t3kkn0 (Improved Version)         #
 #================================================================================#
-#  This script helps manage the Arr-Stack docker deployment.                     #
-#  - Clones the repository if it doesn't exist.                                  #
-#  - Provides a menu for installation, uninstallation, updates, and backups.     #
-#  - Includes safety checks and improved error handling.                         #
+#  This script helps manage the Arr-Stack docker deployment.           #
+#  - Clones the repository if it doesn't exist.                      #
+#  - Provides a menu for installation, uninstallation, updates, and backups.    #
+#  - Includes safety checks and improved error handling.                 #
+#  - Includes NAS folder preparation step during installation.           #
 #================================================================================#
 
 # --- BEGIN CONFIGURATION ---
@@ -37,6 +38,9 @@ readonly BACKUP_DEST_DIR="/mnt/NAS-DATA/Arr-stackBACKUPS"
 # Your media libraries (movies, TV shows, etc.) should be in a COMPLETELY
 # SEPARATE directory to ensure they are never touched by this script's operations.
 readonly CONFIG_BASE_ON_HOST="/mnt/NAS-DATA/DOCKER/Arr-Stack"
+
+# Base path for NAS data. Used for the folder preparation function.
+readonly NAS_BASE_PATH="/mnt/NAS-DATA"
 
 # --- END CONFIGURATION ---
 
@@ -82,7 +86,7 @@ show_menu() {
     echo -e "${C_CYAN}=============================================${C_RESET}"
     echo -e " Stack is located at: ${C_YELLOW}${STACK_DIR}${C_RESET}"
     echo ""
-    echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Clones/Pulls repo, copies .env, and starts containers)"
+    echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Prepares NAS, Clones/Pulls, copies .env, and starts)"
     echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers)"
     echo -e " ${C_BLUE}3. Reload Stack${C_RESET} (Pulls latest from Git & Docker, then restarts)"
     echo ""
@@ -104,9 +108,57 @@ check_config() {
     fi
 }
 
+# CORRECTED Function: Prepare NAS folders based on docker-compose paths
+prepare_nas_folders() {
+    echo -e "${C_BLUE}--- Preparing NAS Folders ---${C_RESET}"
+    echo "This will create the necessary directory structure based on your compose file."
+    echo "It will also set ownership of ${C_YELLOW}${NAS_BASE_PATH}${C_RESET} to user 1026 and group 100."
+    echo "This script assumes you are running it with sufficient privileges (e.g., sudo)."
+    read -p "Do you want to continue? [y/N]: " confirm
+
+    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+        echo "Skipping NAS folder preparation."
+        return
+    fi
+
+    echo "Creating directories..."
+    # Create all required directories in a single command
+    sudo mkdir -p \
+        "${NAS_BASE_PATH}/Downloads/complete" \
+        "${NAS_BASE_PATH}/Downloads/incomplete" \
+        "${NAS_BASE_PATH}/tvshows" \
+        "${NAS_BASE_PATH}/movies" \
+        "${NAS_BASE_PATH}/anime" \
+        "${NAS_BASE_PATH}/Radarr/config" \
+        "${NAS_BASE_PATH}/Bazarr/config" \
+        "${NAS_BASE_PATH}/Homarr/configs" \
+        "${CONFIG_BASE_ON_HOST}/Prowlarr/config" \
+        "${CONFIG_BASE_ON_HOST}/Prowlarr/backup" \
+        "${CONFIG_BASE_ON_HOST}/nzbget/config" \
+        "${CONFIG_BASE_ON_HOST}/qbittorrent/config" \
+        "${CONFIG_BASE_ON_HOST}/rdt-client/config" \
+        "${CONFIG_BASE_ON_HOST}/Sonarr/config" \
+        "${CONFIG_BASE_ON_HOST}/Sonarr/backup" \
+        "${CONFIG_BASE_ON_HOST}/Sonarr-Anime/config" \
+        "${CONFIG_BASE_ON_HOST}/Radarr/backup" \
+        "${CONFIG_BASE_ON_HOST}/Homarr/icons" \
+        "${CONFIG_BASE_ON_HOST}/Homarr/data" \
+        "${CONFIG_BASE_ON_HOST}/JellySeerr/config" \
+        "${CONFIG_BASE_ON_HOST}/Emby/config"
+
+    echo "Setting permissions for ${NAS_BASE_PATH}..."
+    sudo chown -R 1026:100 "${NAS_BASE_PATH}"
+
+    echo -e "${C_GREEN}--- NAS Folder Preparation Complete ---${C_RESET}"
+}
+
+
 # Function 1: Install the Docker stack
 install_stack() {
     echo -e "${C_BLUE}--- Starting Stack Installation ---${C_RESET}"
+
+    # --- NEW STEP: Prepare NAS folders ---
+    prepare_nas_folders
 
     # --- CORRECTED LOGIC: Clone if new, otherwise pull for updates. ---
     if [ ! -d "$STACK_DIR" ]; then
