@@ -374,7 +374,7 @@ while true; do
         1) install_stack ;;
         2) uninstall_stack ;;
         3) reload_stack ;;
-        4. Backup Configuration) backup_configs ;;
+        4) backup_configs ;;
         5) restore_configs ;;
         6) view_logs ;;
         7) prune_docker ;;
