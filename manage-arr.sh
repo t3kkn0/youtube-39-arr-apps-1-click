@@ -104,17 +104,6 @@ check_config() {
     fi
 }
 
-# Function to copy the master .env file
-copy_env_file() {
-    if [ -f "$ENV_SOURCE_PATH" ]; then
-        echo "Copying master .env file from $ENV_SOURCE_PATH and overwriting..."
-        cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
-    else
-        echo -e "${C_RED}Error: Master .env file not found at $ENV_SOURCE_PATH. Aborting.${C_RESET}"
-        return 1
-    fi
-}
-
 # Function 1: Install the Docker stack
 install_stack() {
     echo -e "${C_BLUE}--- Starting Stack Installation ---${C_RESET}"
@@ -127,8 +116,45 @@ install_stack() {
         echo "Stack directory already exists. Skipping clone."
     fi
 
-    # Copy the .env file
-    copy_env_file || return 1
+    # --- New .env handling logic ---
+    if [ -f "$ENV_SOURCE_PATH" ]; then
+        # Preferred path: The user's master .env file exists.
+        echo "Master .env file found. Copying it to the stack directory..."
+        cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
+    else
+        # Fallback path: Master .env not found, let's try to create one from a sample.
+        echo -e "${C_YELLOW}Warning: Master .env file not found at '$ENV_SOURCE_PATH'.${C_RESET}"
+        echo "Checking for a sample file in the repository to use as a template..."
+        
+        local sample_env_path=""
+        if [ -f "$STACK_DIR/.env.sample" ]; then
+            sample_env_path="$STACK_DIR/.env.sample"
+        elif [ -f "$STACK_DIR/.env.example" ]; then
+            sample_env_path="$STACK_DIR/.env.example"
+        fi
+
+        if [ -n "$sample_env_path" ]; then
+            echo "Found sample file: '$sample_env_path'"
+            echo "Copying sample to create a new .env in the stack directory..."
+            cp "$sample_env_path" "$STACK_DIR/.env"
+            
+            echo "Saving a copy of this new .env to your master location for future use..."
+            mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
+            cp "$STACK_DIR/.env" "$ENV_SOURCE_PATH"
+            
+            echo -e "\n${C_RED}================== ACTION REQUIRED ==================${C_RESET}"
+            echo -e "${C_YELLOW}A sample .env file was used. You MUST edit the file at:${C_RESET}"
+            echo -e "${C_CYAN}$ENV_SOURCE_PATH${C_RESET}"
+            echo -e "${C_YELLOW}with your correct paths and settings before the stack will work properly!${C_RESET}"
+            echo -e "${C_RED}=====================================================${C_RESET}\n"
+            read -p "Press Enter to continue the installation, or CTRL+C to exit and edit the file now."
+        else
+            # Error path: No master file and no sample file found.
+            echo -e "${C_RED}Error: No master .env file was found and no sample could be located in the repository.${C_RESET}"
+            echo -e "${C_YELLOW}Please create a .env file at '$ENV_SOURCE_PATH' and run the script again.${C_RESET}"
+            return 1
+        fi
+    fi
 
     # Navigate to the stack directory and start the containers
     cd "$STACK_DIR" || return
@@ -176,6 +202,12 @@ reload_stack() {
         return 1
     fi
 
+    # For reload, the master .env file MUST exist.
+    if [ ! -f "$ENV_SOURCE_PATH" ]; then
+        echo -e "${C_RED}Error: Master .env file not found at '$ENV_SOURCE_PATH'. Cannot reload without it.${C_RESET}"
+        return 1
+    fi
+
     cd "$STACK_DIR" || return
 
     echo "Pulling latest changes from Git..."
@@ -184,8 +216,8 @@ reload_stack() {
     echo "Pulling latest Docker images..."
     docker compose pull
 
-    # Copy the .env file again to ensure it's up-to-date
-    copy_env_file || return 1
+    echo "Copying master .env file from $ENV_SOURCE_PATH to ensure stack is in sync..."
+    cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
 
     echo "Recreating containers with new images/configuration..."
     docker compose up -d --force-recreate
@@ -200,6 +232,11 @@ backup_configs() {
     # Check if source config directory exists
     if [ ! -d "$CONFIG_BASE_ON_HOST" ]; then
         echo -e "${C_RED}Error: Source configuration path not found at '$CONFIG_BASE_ON_HOST'. Please check the CONFIG_BASE_ON_HOST variable in the script.${C_RESET}"
+        return 1
+    fi
+    # Also check for the .env file to back up
+    if [ ! -f "$ENV_SOURCE_PATH" ]; then
+        echo -e "${C_RED}Error: Master .env file not found at '$ENV_SOURCE_PATH'. Cannot create a complete backup.${C_RESET}"
         return 1
     fi
 
