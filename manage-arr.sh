@@ -13,8 +13,9 @@ set -o pipefail
 #  This script helps manage the Arr-Stack docker deployment.           #
 #  - Clones the repository if it doesn't exist.                      #
 #  - Provides a menu for installation, uninstallation, updates, and backups.    #
+#  - Dynamically creates folders based on docker-compose.yml.          #
+#  - Dynamically sets permissions based on your .env file.             #
 #  - Includes safety checks and improved error handling.                 #
-#  - Includes NAS folder preparation step during installation.           #
 #================================================================================#
 
 # --- BEGIN CONFIGURATION ---
@@ -45,13 +46,22 @@ readonly NAS_BASE_PATH="/mnt/NAS-DATA"
 # --- END CONFIGURATION ---
 
 
-# --- SCRIPT COLORS ---
-readonly C_RESET='\033[0m'
-readonly C_RED='\033[0;31m'
-readonly C_GREEN='\033[0;32m'
-readonly C_YELLOW='\033[0;33m'
-readonly C_BLUE='\033[0;34m'
-readonly C_CYAN='\033[0;96m'
+# --- SCRIPT COLORS (disables itself if not in an interactive terminal) ---
+if [ -t 1 ]; then
+    readonly C_RESET='\033[0m'
+    readonly C_RED='\033[0;31m'
+    readonly C_GREEN='\033[0;32m'
+    readonly C_YELLOW='\033[0;33m'
+    readonly C_BLUE='\033[0;34m'
+    readonly C_CYAN='\033[0;96m'
+else
+    readonly C_RESET=''
+    readonly C_RED=''
+    readonly C_GREEN=''
+    readonly C_YELLOW=''
+    readonly C_BLUE=''
+    readonly C_CYAN=''
+fi
 
 
 # --- FUNCTIONS ---
@@ -59,7 +69,8 @@ readonly C_CYAN='\033[0;96m'
 # Function to check for required dependencies
 check_dependencies() {
     local missing_deps=()
-    for dep in git docker; do
+    # yq is now required for dynamic folder creation
+    for dep in git docker yq; do
         if ! command -v "$dep" &> /dev/null; then
             missing_deps+=("$dep")
         fi
@@ -67,7 +78,7 @@ check_dependencies() {
 
     if [ ${#missing_deps[@]} -ne 0 ]; then
         echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}.${C_RESET}"
-        echo -e "${C_YELLOW}Please install them and try again.${C_RESET}"
+        echo -e "${C_YELLOW}Please install them and try again. 'yq' is a command-line YAML processor.${C_RESET}"
         exit 1
     fi
     # Also check for Docker Compose v2 compatibility
@@ -87,15 +98,15 @@ show_menu() {
     echo -e " Stack is located at: ${C_YELLOW}${STACK_DIR}${C_RESET}"
     echo ""
     echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Prepares NAS, Clones/Pulls, copies .env, and starts)"
-    echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers)"
+    echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers/volumes)"
     echo -e " ${C_BLUE}3. Reload Stack${C_RESET} (Pulls latest from Git & Docker, then restarts)"
     echo ""
-    echo -e " ${C_GREEN}4. Backup Configuration${C_RESET} (Archives all config folders and .env file)"
+    echo -e " ${C_GREEN}4. Backup Configuration${C_RESET} (Archives config folders and .env file)"
     echo -e " ${C_RED}5. Restore Configuration${C_RESET} (Restores from a backup archive)"
     echo ""
     echo -e " ${C_YELLOW}6. View Live Logs${C_RESET} (Follows logs from all containers)"
     echo -e " ${C_YELLOW}7. Prune Docker System${C_RESET} (Remove unused images/volumes/networks)"
-    echo -e " ${C_RED}8. DESTROY Config Folders${C_RESET} (Deletes config folders from NAS)"
+    echo -e " ${C_RED}8. DESTROY Config Folders${C_RESET} (Deletes ALL app config folders from NAS)"
     echo ""
     echo -e " ${C_CYAN}0. Exit${C_RESET}"
     echo ""
@@ -109,46 +120,61 @@ check_config() {
     fi
 }
 
-# Function: Prepare NAS folders based on docker-compose paths
+# Function: Prepare NAS folders dynamically based on docker-compose.yml
 prepare_nas_folders() {
     echo -e "${C_BLUE}--- Preparing NAS Folders ---${C_RESET}"
     echo "This will create the necessary directory structure based on your compose file."
-    echo "It will also set ownership of ${C_YELLOW}${NAS_BASE_PATH}${C_RESET} to user 1026 and group 100."
+    echo "It will also set ownership of the config folders based on PUID/PGID in your .env file."
     echo "This script assumes you are running it with sufficient privileges (e.g., sudo)."
-    read -p "Do you want to continue? [y/N]: " confirm
+    # Changed to [Y/n] to default to yes
+    read -p "Do you want to continue? [Y/n]: " confirm
 
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+    if [[ "$confirm" == "n" || "$confirm" == "N" ]]; then
         echo "Skipping NAS folder preparation."
         return
     fi
 
-    echo "Creating directories..."
-    # Create all required directories in a single command
-    sudo mkdir -p \
-        "${NAS_BASE_PATH}/Downloads/complete" \
-        "${NAS_BASE_PATH}/Downloads/incomplete" \
-        "${NAS_BASE_PATH}/tvshows" \
-        "${NAS_BASE_PATH}/movies" \
-        "${NAS_BASE_PATH}/anime" \
-        "${CONFIG_BASE_ON_HOST}/Radarr/config" \
-        "${CONFIG_BASE_ON_HOST}/Bazarr/config" \
-        "${CONFIG_BASE_ON_HOST}/Homarr/configs" \
-        "${CONFIG_BASE_ON_HOST}/Prowlarr/config" \
-        "${CONFIG_BASE_ON_HOST}/Prowlarr/backup" \
-        "${CONFIG_BASE_ON_HOST}/nzbget/config" \
-        "${CONFIG_BASE_ON_HOST}/qbittorrent/config" \
-        "${CONFIG_BASE_ON_HOST}/rdt-client/config" \
-        "${CONFIG_BASE_ON_HOST}/Sonarr/config" \
-        "${CONFIG_BASE_ON_HOST}/Sonarr/backup" \
-        "${CONFIG_BASE_ON_HOST}/Sonarr-Anime/config" \
-        "${CONFIG_BASE_ON_HOST}/Radarr/backup" \
-        "${CONFIG_BASE_ON_HOST}/Homarr/icons" \
-        "${CONFIG_BASE_ON_HOST}/Homarr/data" \
-        "${CONFIG_BASE_ON_HOST}/JellySeerr/config" \
-        "${CONFIG_BASE_ON_HOST}/Emby/config"
+    local compose_file="$STACK_DIR/docker-compose.yml"
+    if [ ! -f "$compose_file" ]; then
+        echo -e "${C_RED}Error: docker-compose.yml not found at '$compose_file'. Cannot prepare folders.${C_RESET}"
+        return 1
+    fi
 
-    echo "Setting permissions for ${NAS_BASE_PATH}..."
-    sudo chown -R 1026:100 "${NAS_BASE_PATH}"
+    echo "Reading volume paths from $compose_file..."
+    # Use yq to parse the docker-compose file and extract host-side volume paths.
+    # This makes the script automatically adapt to any service you add or remove.
+    local host_paths
+    host_paths=$(yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]' "$compose_file")
+
+    echo "Creating directories..."
+    for path in $host_paths; do
+        # For safety, only create directories that are within the defined base paths.
+        if [[ "$path" == "$CONFIG_BASE_ON_HOST"* || "$path" == "$NAS_BASE_PATH"* ]]; then
+            echo "  Ensuring directory exists: $path"
+            sudo mkdir -p "$path"
+        else
+            echo "  Skipping path outside defined scope: $path"
+        fi
+    done
+
+    # Source the .env file to get PUID/PGID for setting permissions
+    local puid=1000 # Default PUID
+    local pgid=1000 # Default PGID
+    if [ -f "$STACK_DIR/.env" ]; then
+        # Grep for PUID and PGID, remove comments, and load them
+        PUID_VAL=$(grep -E '^\s*PUID=' "$STACK_DIR/.env" | cut -d'=' -f2)
+        PGID_VAL=$(grep -E '^\s*PGID=' "$STACK_DIR/.env" | cut -d'=' -f2)
+        if [ -n "$PUID_VAL" ]; then puid=$PUID_VAL; fi
+        if [ -n "$PGID_VAL" ]; then pgid=$PGID_VAL; fi
+    fi
+
+    echo "Setting permissions for ${CONFIG_BASE_ON_HOST} to User ${puid} / Group ${pgid}..."
+    sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}"
+
+    # Also set permissions on the standard media folders if they are on the same base path
+    echo "Setting permissions for media/download folders on ${NAS_BASE_PATH}..."
+    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/Downloads" "${NAS_BASE_PATH}/tvshows" "${NAS_BASE_PATH}/movies" "${NAS_BASE_PATH}/anime"
+
 
     echo -e "${C_GREEN}--- NAS Folder Preparation Complete ---${C_RESET}"
 }
@@ -158,55 +184,53 @@ prepare_nas_folders() {
 install_stack() {
     echo -e "${C_BLUE}--- Starting Stack Installation ---${C_RESET}"
 
-    # --- NEW STEP: Prepare NAS folders ---
-    prepare_nas_folders
-
-    # --- CORRECTED LOGIC: Clone if new, otherwise pull for updates. ---
+    # --- Clone or Pull Repo ---
     if [ ! -d "$STACK_DIR" ]; then
         echo "Directory $STACK_DIR not found. Cloning repository..."
         git clone "$REPO_URL" "$STACK_DIR"
     else
         echo "Stack directory already exists. Pulling latest changes from repository..."
-        cd "$STACK_DIR"
-        git pull
-        cd - > /dev/null # Go back to previous directory silently
+        (cd "$STACK_DIR" && git pull)
     fi
 
-    # --- CORRECTED LOGIC: Find .env from master path, or fall back to repository's version. ---
+    # --- Handle .env file ---
+    # This must be done BEFORE preparing folders so we can get PUID/PGID
     if [ -f "$ENV_SOURCE_PATH" ]; then
-        # Preferred path: The user's master .env file exists.
         echo "Master .env file found. Copying it to the stack directory..."
         cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
     else
-        # Fallback path: Master .env not found, let's use the one from the repository.
         echo -e "${C_YELLOW}Warning: Master .env file not found at '$ENV_SOURCE_PATH'.${C_RESET}"
-        
         local repo_env_path="$STACK_DIR/.env"
+        if [ -f "$repo_env_path.template" ] && [ ! -f "$repo_env_path" ]; then
+             echo "Found .env.template in repository, copying it to .env"
+             cp "$repo_env_path.template" "$repo_env_path"
+        fi
+
         if [ -f "$repo_env_path" ]; then
             echo "Found .env file in the repository. Using it as a template."
-            
-            echo "Saving a copy to your master location for future use..."
+            echo "Saving a copy to your master location ('$ENV_SOURCE_PATH') for future use..."
             mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
             cp "$repo_env_path" "$ENV_SOURCE_PATH"
-            
+
             echo -e "\n${C_RED}================== ACTION REQUIRED ==================${C_RESET}"
-            echo -e "${C_YELLOW}A template .env file was copied from the repository. You MUST edit the file at:${C_RESET}"
+            echo -e "${C_YELLOW}A template .env file was copied. You MUST edit the file at:${C_RESET}"
             echo -e "${C_CYAN}$ENV_SOURCE_PATH${C_RESET}"
-            echo -e "${C_YELLOW}with your correct paths and settings (like TZ, PUID, PGID) before the stack will work properly!${C_RESET}"
+            echo -e "${C_YELLOW}with your correct paths and settings (TZ, PUID, PGID) before the stack will work properly!${C_RESET}"
             echo -e "${C_RED}=====================================================${C_RESET}\n"
-            read -p "Press Enter to continue the installation, or CTRL+C to exit and edit the file now."
+            read -p "Press Enter to continue, or CTRL+C to exit and edit the file now."
         else
-            # Error path: No master file and no .env file in the repository.
-            echo -e "${C_RED}Error: No master .env file was found and no .env could be located in the repository.${C_RESET}"
+            echo -e "${C_RED}Error: No master .env file found and no .env or .env.template could be located in the repository.${C_RESET}"
             echo -e "${C_YELLOW}Please create a .env file at '$ENV_SOURCE_PATH' and run the script again.${C_RESET}"
             return 1
         fi
     fi
 
-    # Navigate to the stack directory and start the containers
-    cd "$STACK_DIR" || return
+    # --- Prepare NAS folders (now uses dynamic logic) ---
+    prepare_nas_folders
+
+    # --- Start Containers ---
     echo "Starting Docker containers..."
-    docker compose up -d
+    (cd "$STACK_DIR" && docker compose up -d)
     echo -e "${C_GREEN}--- Stack Installation Complete ---${C_RESET}"
 }
 
@@ -227,15 +251,15 @@ uninstall_stack() {
         return
     fi
 
-    echo "Stopping containers..."
-    docker compose down
-
-    echo -e "${C_YELLOW}This will permanently delete the application config data stored in Docker volumes.${C_RESET}"
-    echo -e "${C_YELLOW}This will NOT touch your media libraries (movies/TV shows) if they are in a separate path.${C_RESET}"
+    echo -e "${C_YELLOW}This will NOT touch your media libraries (movies/TV shows).${C_RESET}"
     read -p "Do you also want to remove all associated volumes (DELETES APP CONFIGS)? [y/N]: " confirm_volumes
+
     if [[ "$confirm_volumes" == "y" || "$confirm_volumes" == "Y" ]]; then
-        echo -e "${C_RED}WARNING: Removing volumes... This is permanent!${C_RESET}"
+        echo -e "${C_RED}WARNING: Stopping containers AND removing volumes... This is permanent!${C_RESET}"
         docker compose down -v
+    else
+        echo "Stopping containers but leaving volumes intact..."
+        docker compose down
     fi
 
     echo -e "${C_GREEN}--- Stack Uninstallation Complete ---${C_RESET}"
@@ -249,7 +273,6 @@ reload_stack() {
         return 1
     fi
 
-    # For reload, the master .env file MUST exist.
     if [ ! -f "$ENV_SOURCE_PATH" ]; then
         echo -e "${C_RED}Error: Master .env file not found at '$ENV_SOURCE_PATH'. Cannot reload without it.${C_RESET}"
         return 1
@@ -267,7 +290,7 @@ reload_stack() {
     cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
 
     echo "Recreating containers with new images/configuration..."
-    docker compose up -d --force-recreate
+    docker compose up -d --force-recreate --remove-orphans
 
     echo -e "${C_GREEN}--- Stack Reload Complete ---${C_RESET}"
 }
@@ -276,20 +299,16 @@ reload_stack() {
 backup_configs() {
     echo -e "${C_BLUE}--- Starting Configuration Backup ---${C_RESET}"
 
-    # Check if source config directory exists
     if [ ! -d "$CONFIG_BASE_ON_HOST" ]; then
-        echo -e "${C_RED}Error: Source configuration path not found at '$CONFIG_BASE_ON_HOST'. Please check the CONFIG_BASE_ON_HOST variable in the script.${C_RESET}"
+        echo -e "${C_RED}Error: Source configuration path not found at '$CONFIG_BASE_ON_HOST'. Please check the script configuration.${C_RESET}"
         return 1
     fi
-    # Also check for the .env file to back up
     if [ ! -f "$ENV_SOURCE_PATH" ]; then
         echo -e "${C_RED}Error: Master .env file not found at '$ENV_SOURCE_PATH'. Cannot create a complete backup.${C_RESET}"
         return 1
     fi
 
-    # Create backup destination if it doesn't exist
     mkdir -p "$BACKUP_DEST_DIR"
-
     local timestamp
     timestamp=$(date +"%Y-%m-%d_%H%M%S")
     local backup_file="$BACKUP_DEST_DIR/arr-stack-backup-${timestamp}.tar.gz"
@@ -299,10 +318,8 @@ backup_configs() {
     echo "Source (.env): $ENV_SOURCE_PATH"
     echo "Destination: $backup_file"
 
-    # Create the archive. The -P flag tells tar to not strip the leading '/' from file names.
-    tar -Pzcf "$backup_file" "$CONFIG_BASE_ON_HOST" "$ENV_SOURCE_PATH"
-
-    if [ $? -eq 0 ]; then
+    # The -P flag tells tar to not strip the leading '/' from file names.
+    if tar -Pzcf "$backup_file" "$CONFIG_BASE_ON_HOST" "$ENV_SOURCE_PATH"; then
         echo -e "${C_GREEN}--- Backup Complete ---${C_RESET}"
         echo "Backup saved to $backup_file"
     else
@@ -344,8 +361,7 @@ restore_configs() {
     fi
 
     echo "Stopping containers before restore..."
-    cd "$STACK_DIR" || return
-    docker compose down
+    (cd "$STACK_DIR" && docker compose down)
 
     # Create a secure temporary directory
     local temp_dir
@@ -360,28 +376,26 @@ restore_configs() {
     # Use rsync for safety and efficiency. The trailing slashes are important!
     if [ -d "$temp_dir$CONFIG_BASE_ON_HOST/" ]; then
         echo "Restoring main config from $temp_dir$CONFIG_BASE_ON_HOST"
-        # Ensure the parent directory exists before restoring
         mkdir -p "$CONFIG_BASE_ON_HOST"
         rsync -a --delete "$temp_dir$CONFIG_BASE_ON_HOST/" "$CONFIG_BASE_ON_HOST/"
     fi
 
     if [ -f "$temp_dir$ENV_SOURCE_PATH" ]; then
         echo "Restoring master .env file from $temp_dir$ENV_SOURCE_PATH"
-        # Ensure the parent directory exists before restoring
         mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
         cp "$temp_dir$ENV_SOURCE_PATH" "$ENV_SOURCE_PATH"
     fi
 
-    # Clean up the temporary directory
+    # Clean up the temporary directory and the trap
     rm -rf -- "$temp_dir"
-    trap - EXIT # Clear the trap
+    trap - EXIT
 
     echo -e "${C_GREEN}--- Restore Complete ---${C_RESET}"
     read -p "Do you want to start the stack now? [y/N]: " start_now
     if [[ "$start_now" == "y" || "$start_now" == "Y" ]]; then
         install_stack
     else
-        echo "You can start your stack again later using Option 1."
+        echo "You can start your stack again later using Option 1 or 3."
     fi
 }
 
@@ -391,9 +405,8 @@ view_logs() {
         echo -e "${C_RED}Error: Stack directory not found. Is the stack installed?${C_RESET}"
         return
     fi
-    cd "$STACK_DIR" || return
     echo "Showing live logs for all services. Press CTRL+C to stop."
-    docker compose logs -f
+    (cd "$STACK_DIR" && docker compose logs -f)
 }
 
 # Function 7: Prune Docker system
@@ -412,22 +425,22 @@ prune_docker() {
     echo -e "${C_GREEN}Docker system prune complete.${C_RESET}"
 }
 
-# NEW Function 8: Destroy configuration folders on the NAS
+# Function 8: Destroy configuration folders on the NAS
 destroy_config_folders() {
     echo -e "${C_RED}--- Starting Configuration Folder DESTRUCTION ---${C_RESET}"
     echo -e "${C_RED}!!!!!!!!!!!!!!!!!!!!!!!!!! WARNING !!!!!!!!!!!!!!!!!!!!!!!!!!${C_RESET}"
     echo -e "${C_YELLOW}This is a highly destructive and IRREVERSIBLE action.${C_RESET}"
-    echo "This will permanently delete the following application configuration folders"
-    echo "from your NAS. It will NOT touch your media libraries (movies, tvshows, anime)."
+    echo "This will permanently delete the MAIN application configuration directory"
+    echo "from your host system. It is intended for a complete application reset."
     echo ""
-    echo "The following directories and all their contents will be DELETED:"
-    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Downloads${C_RESET}"
-    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Radarr${C_RESET}"
-    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Bazarr${C_RESET}"
-    echo -e " - ${C_CYAN}${NAS_BASE_PATH}/Homarr${C_RESET}"
+    echo -e "${C_YELLOW}This will NOT touch:${C_RESET}"
+    echo " - Your media libraries (movies, tvshows, anime)"
+    echo " - Your downloads folder"
+    echo " - The git repository in ${STACK_DIR}"
+    echo ""
+    echo "The following directory and ALL ITS CONTENTS will be DELETED:"
     echo -e " - ${C_CYAN}${CONFIG_BASE_ON_HOST}${C_RESET}"
     echo ""
-    echo "This is intended for a complete reset of your setup."
     read -p "To confirm, type the word 'DESTROY' and press Enter: " confirm_destroy
 
     if [[ "$confirm_destroy" != "DESTROY" ]]; then
@@ -435,24 +448,17 @@ destroy_config_folders() {
         return
     fi
 
+    if [ ! -d "$CONFIG_BASE_ON_HOST" ]; then
+        echo "Directory ${CONFIG_BASE_ON_HOST} not found. Nothing to delete."
+        return
+    fi
+
     echo "Confirmation received. Proceeding with deletion..."
-
-    # List of directories to delete
-    local directories_to_delete=(
-        "${CONFIG_BASE_ON_HOST}"
-    )
-
-    for dir in "${directories_to_delete[@]}"; do
-        if [ -d "$dir" ]; then
-            echo "Deleting $dir..."
-            sudo rm -rf "$dir"
-        else
-            echo "Skipping $dir (not found)."
-        fi
-    done
-
-    echo -e "${C_GREEN}--- Configuration Folder Destruction Complete ---${C_RESET}"
-    echo "Note: The git repository at ${STACK_DIR} has not been touched."
+    if sudo rm -rf "${CONFIG_BASE_ON_HOST}"; then
+        echo -e "${C_GREEN}--- Configuration Folder Destruction Complete ---${C_RESET}"
+    else
+        echo -e "${C_RED}--- Destruction Failed ---${C_RESET}"
+    fi
 }
 
 
