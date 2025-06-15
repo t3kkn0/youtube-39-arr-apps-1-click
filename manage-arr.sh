@@ -69,8 +69,8 @@ fi
 # Function to check for required dependencies
 check_dependencies() {
     local missing_deps=()
-    # yq is now required for dynamic folder creation
-    for dep in git docker yq; do
+    # yq is for parsing, curl is for the online fallback
+    for dep in git docker yq curl; do
         if ! command -v "$dep" &> /dev/null; then
             missing_deps+=("$dep")
         fi
@@ -79,35 +79,32 @@ check_dependencies() {
     if [ ${#missing_deps[@]} -ne 0 ]; then
         echo -e "${C_RED}Error: Missing required dependencies: ${missing_deps[*]}${C_RESET}"
 
-        # --- NEW: Helper block to suggest installation ---
-        # This check is now POSIX-compliant and works in 'sh' and 'bash'
+        # --- Helper block to suggest installation ---
         if printf '%s\n' "${missing_deps[@]}" | grep -q -w "yq"; then
             echo -e "${C_YELLOW}This script requires 'yq' (v4+, by Mike Farah) to manage folders dynamically.${C_RESET}"
-            echo -e "${C_BLUE}Attempting to detect your package manager to provide installation instructions...${C_RESET}"
-            
-            local install_cmd=""
-            if command -v apt-get &> /dev/null; then
-                install_cmd="sudo apt update && sudo apt install yq"
-            elif command -v dnf &> /dev/null; then
-                install_cmd="sudo dnf install yq"
-            elif command -v pacman &> /dev/null; then
-                install_cmd="sudo pacman -S yq"
-            elif command -v brew &> /dev/null; then
-                install_cmd="brew install yq"
-            fi
-
-            if [ -n "$install_cmd" ]; then
-                echo -e "${C_GREEN}To install 'yq' on your system, please run the following command:${C_RESET}"
-                echo -e "    ${C_CYAN}$install_cmd${C_RESET}"
-            else
-                echo -e "${C_YELLOW}Could not detect a common package manager.${C_RESET}"
-                echo -e "Please install 'yq' manually. It is a command-line YAML processor by Mike Farah."
-                echo -e "You can find it here: ${C_CYAN}https://github.com/mikefarah/yq/${C_RESET}"
-            fi
-            echo -e "After installation, please re-run this script."
         fi
-        # --- End of helper block ---
-        
+        if printf '%s\n' "${missing_deps[@]}" | grep -q -w "curl"; then
+            echo -e "${C_YELLOW}This script requires 'curl' to download the compose file from GitHub as a fallback.${C_RESET}"
+        fi
+
+        local install_cmd=""
+        if command -v apt-get &> /dev/null; then
+            install_cmd="sudo apt update && sudo apt install yq curl"
+        elif command -v dnf &> /dev/null; then
+            install_cmd="sudo dnf install yq curl"
+        elif command -v pacman &> /dev/null; then
+            install_cmd="sudo pacman -S yq curl"
+        elif command -v brew &> /dev/null; then
+            install_cmd="brew install yq curl"
+        fi
+
+        if [ -n "$install_cmd" ]; then
+            echo -e "${C_GREEN}To install missing dependencies, please run the following command:${C_RESET}"
+            echo -e "    ${C_CYAN}$install_cmd${C_RESET}"
+        else
+            echo -e "${C_YELLOW}Could not detect a common package manager. Please install missing packages manually.${C_RESET}"
+        fi
+        echo -e "After installation, please re-run this script."
         exit 1
     fi
 
@@ -118,6 +115,8 @@ check_dependencies() {
         exit 1
     fi
 }
+
+
 
 # Function to display the main menu
 show_menu() {
@@ -149,13 +148,11 @@ check_config() {
     fi
 }
 
-# Function: Prepare NAS folders dynamically based on docker-compose.yml
+# Function: Prepare NAS folders dynamically, with online fallback
 prepare_nas_folders() {
     echo -e "${C_BLUE}--- Preparing NAS Folders ---${C_RESET}"
-    echo "This will create the necessary directory structure based on your compose file."
-    echo "It will also set ownership of the config folders based on PUID/PGID in your .env file."
+    echo "This will create directory structures based on your compose file."
     echo "This script assumes you are running it with sufficient privileges (e.g., sudo)."
-    # Changed to [Y/n] to default to yes
     read -p "Do you want to continue? [Y/n]: " confirm
 
     if [[ "$confirm" == "n" || "$confirm" == "N" ]]; then
@@ -163,34 +160,62 @@ prepare_nas_folders() {
         return
     fi
 
-    local compose_file="$STACK_DIR/docker-compose.yml"
-    if [ ! -f "$compose_file" ]; then
-        echo -e "${C_RED}Error: docker-compose.yml not found at '$compose_file'. Cannot prepare folders.${C_RESET}"
+    local host_paths=""
+    local compose_source_msg=""
+
+    # --- Method 1: Try to find local compose file first (Preferred) ---
+    local compose_file=""
+    if [ -f "$STACK_DIR/docker-compose.yml" ]; then
+        compose_file="$STACK_DIR/docker-compose.yml"
+    elif [ -f "$STACK_DIR/compose.yml" ]; then
+        compose_file="$STACK_DIR/compose.yml"
+    fi
+
+    if [ -n "$compose_file" ]; then
+        compose_source_msg="${C_GREEN}Using local compose file: $compose_file${C_RESET}"
+        host_paths=$(yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]' "$compose_file")
+    else
+        # --- Method 2: Fallback to downloading from GitHub ---
+        compose_source_msg="${C_YELLOW}Warning: Local compose file not found. Falling back to online version from GitHub.${C_RESET}"
+        
+        local raw_url_base
+        raw_url_base=$(echo "$REPO_URL" | sed 's/\.git$//' | sed 's|github.com|raw.githubusercontent.com|')/main
+        
+        local online_content
+        online_content=$(curl -sSL "$raw_url_base/docker-compose.yml")
+        
+        if [ -z "$online_content" ] || [[ "$online_content" == *"404: Not Found"* ]]; then
+            online_content=$(curl -sSL "$raw_url_base/compose.yml")
+        fi
+        
+        if [ -n "$online_content" ] && [[ "$online_content" != *"404: Not Found"* ]]; then
+            host_paths=$(echo "$online_content" | yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]')
+        fi
+    fi
+    
+    echo -e "$compose_source_msg"
+    
+    # --- Final Check: If both methods failed, exit. ---
+    if [ -z "$host_paths" ]; then
+        echo -e "${C_RED}Error: Failed to read compose file from both local and online sources. Cannot prepare folders.${C_RESET}"
         return 1
     fi
 
-    echo "Reading volume paths from $compose_file..."
-    # Use yq to parse the docker-compose file and extract host-side volume paths.
-    # This makes the script automatically adapt to any service you add or remove.
-    local host_paths
-    host_paths=$(yq '.. | .volumes? | select(.) | .[] | select(kind == "string") | split(":") | .[0]' "$compose_file")
-
     echo "Creating directories..."
+    # The '|| true' prevents the loop from failing if host_paths is empty after parsing
     for path in $host_paths; do
-        # For safety, only create directories that are within the defined base paths.
         if [[ "$path" == "$CONFIG_BASE_ON_HOST"* || "$path" == "$NAS_BASE_PATH"* ]]; then
             echo "  Ensuring directory exists: $path"
             sudo mkdir -p "$path"
         else
             echo "  Skipping path outside defined scope: $path"
         fi
-    done
+    done || true
 
-    # Source the .env file to get PUID/PGID for setting permissions
-    local puid=1000 # Default PUID
-    local pgid=1000 # Default PGID
+    # --- Set Permissions (as before) ---
+    local puid=1000
+    local pgid=1000
     if [ -f "$STACK_DIR/.env" ]; then
-        # Grep for PUID and PGID, remove comments, and load them
         PUID_VAL=$(grep -E '^\s*PUID=' "$STACK_DIR/.env" | cut -d'=' -f2)
         PGID_VAL=$(grep -E '^\s*PGID=' "$STACK_DIR/.env" | cut -d'=' -f2)
         if [ -n "$PUID_VAL" ]; then puid=$PUID_VAL; fi
@@ -200,10 +225,11 @@ prepare_nas_folders() {
     echo "Setting permissions for ${CONFIG_BASE_ON_HOST} to User ${puid} / Group ${pgid}..."
     sudo chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}"
 
-    # Also set permissions on the standard media folders if they are on the same base path
     echo "Setting permissions for media/download folders on ${NAS_BASE_PATH}..."
-    sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/Downloads" "${NAS_BASE_PATH}/tvshows" "${NAS_BASE_PATH}/movies" "${NAS_BASE_PATH}/anime"
-
+    if [ -d "${NAS_BASE_PATH}/Downloads" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/Downloads"; fi
+    if [ -d "${NAS_BASE_PATH}/tvshows" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/tvshows"; fi
+    if [ -d "${NAS_BASE_PATH}/movies" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/movies"; fi
+    if [ -d "${NAS_BASE_PATH}/anime" ]; then sudo chown -R "${puid}:${pgid}" "${NAS_BASE_PATH}/anime"; fi
 
     echo -e "${C_GREEN}--- NAS Folder Preparation Complete ---${C_RESET}"
 }
