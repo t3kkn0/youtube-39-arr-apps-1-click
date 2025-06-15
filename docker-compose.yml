@@ -368,12 +368,12 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"  #<-- REPLACE WITH YOUR SYNOLOGY'S IP
-      device: ":/volume1/DATA/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
   prowlarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Prowlarr/backup"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Prowlarr/backup"
   downloads:
     driver_opts:
       type: nfs
@@ -383,42 +383,42 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/nzbget/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/nzbget/config"
   qbittorrent_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/qbittorrent/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/qbittorrent/config"
   rdt_client_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/rdt-client/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/rdt-client/config"
   sonarr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Sonarr/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr/config"
   sonarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Sonarr/backup"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr/backup"
   sonarr_tvshows:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Sonarr/tvshows"
+      device: ":/volume1/DATA/tvshows"
   sonarr_anime_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Sonarr-Anime/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr-Anime/config"
   sonarr_anime_anime:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Sonarr-Anime/anime"
+      device: ":/volume1/DATA/anime"
   radarr_config:
     driver_opts:
       type: nfs
@@ -428,12 +428,12 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Radarr/movies"
+      device: ":/volume1/DATA/movies"
   radarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Radarr/backup"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Radarr/backup"
   bazarr_config:
     driver_opts:
       type: nfs
@@ -448,22 +448,22 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Homarr/icons"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Homarr/icons"
   homarr_data:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Homarr/data"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Homarr/data"
   jellyseerr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/JellySeerr/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/JellySeerr/config"
   emby_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/Emby/config"
+      device: ":/volume1/DATA/DOCKER/Arr-Stack/Emby/config"
 
 
 
