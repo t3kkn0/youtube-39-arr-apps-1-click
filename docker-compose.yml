@@ -368,12 +368,12 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"  #<-- REPLACE WITH YOUR SYNOLOGY'S IP
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
+      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
   prowlarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Prowlarr/backup"
+      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
   downloads:
     driver_opts:
       type: nfs
@@ -383,87 +383,87 @@ volumes:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/nzbget/config"
+      device: ":/volume1/DOCKER/Arr-Stack/nzbget/config"
   qbittorrent_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/qbittorrent/config"
+      device: ":/volume1/DOCKER/Arr-Stack/qbittorrent/config"
   rdt_client_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/rdt-client/config"
+      device: ":/volume1/DOCKER/Arr-Stack/rdt-client/config"
   sonarr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr/config"
   sonarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr/backup"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
   sonarr_tvshows:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/tvshows"
+      device: ":/volume1/MEDIA/tvshows"
   sonarr_anime_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Sonarr-Anime/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/config"
   sonarr_anime_anime:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/anime"
+      device: ":/volume1/MEDIA/anime"
   radarr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Radarr/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Radarr/config"
   radarr_movies:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/movies"
+      device: ":/volume1/MEDIA/movies"
   radarr_backup:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Radarr/backup"
+      device: ":/volume1/DOCKER/Arr-Stack/Radarr/backup"
   bazarr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Bazarr/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Bazarr/config"
   homarr_configs:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Homarr/configs"
+      device: ":/volume1/DOCKER/Arr-Stack/Homarr/configs"
   homarr_icons:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Homarr/icons"
+      device: ":/volume1/DOCKER/Arr-Stack/Homarr/icons"
   homarr_data:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Homarr/data"
+      device: ":/volume1/DOCKER/Arr-Stack/Homarr/data"
   jellyseerr_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/JellySeerr/config"
+      device: ":/volume1/DOCKER/Arr-Stack/JellySeerr/config"
   emby_config:
     driver_opts:
       type: nfs
       o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DATA/DOCKER/Arr-Stack/Emby/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Emby/config"
 
 
 
