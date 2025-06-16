@@ -249,26 +249,54 @@ function prepare_nas_folders() {
     log_info "  Ensured directory exists: $dir"
   done
 
-  # Get PUID/PGID from the .env file to set correct ownership
-  local puid=1000 # Default PUID
-  local pgid=1000 # Default PGID
+  # --- Set Ownership ---
+  # Get PUID/PGID from the .env file to set correct ownership.
+  # This section ensures that even if the .env file is missing, we fall
+  # back to a safe default instead of failing.
+  local puid="1026" # Default PUID
+  local pgid="100" # Default PGID
   if [[ -f "${STACK_DIR}/.env" ]]; then
-    # Safely extract PUID/PGID.
-    puid=$(grep -E '^\s*PUID=' "${STACK_DIR}/.env" | cut -d'=' -f2)
-    pgid=$(grep -E '^\s*PGID=' "${STACK_DIR}/.env" | cut -d'=' -f2)
+    # Safely extract PUID/PGID, keeping the default if the entry is missing.
+    puid=$(grep -E '^\s*PUID=' "${STACK_DIR}/.env" | cut -d'=' -f2 || echo "$puid")
+    pgid=$(grep -E '^\s*PGID=' "${STACK_DIR}/.env" | cut -d'=' -f2 || echo "$pgid")
+  else
+      log_warn "No .env file found in ${STACK_DIR}. Using default PUID/PGID of 1000:1000."
+      log_warn "This may cause permission issues if your master .env file specifies different values."
   fi
 
   log_info "Setting ownership for all stack-related data to User ${puid} / Group ${pgid}..."
-  # Consolidate chown operations
-  chown -R "${puid}:${pgid}" \
-    "/mnt/NAS-DATA/Downloads" \
-    "/mnt/NAS-MEDIA/tvshows" \
-    "/mnt/NAS-MEDIA/movies" \
-    "/mnt/NAS-MEDIA/anime" \
-    "${CONFIG_BASE_ON_HOST}"
+  
+  # Define parent directories for ownership changes to keep it DRY.
+  local downloads_parent="/mnt/NAS-DATA/Downloads"
+  local media_parent="/mnt/NAS-MEDIA"
+
+  # 1. Set ownership for all application config folders
+  if [ -d "${CONFIG_BASE_ON_HOST}" ]; then
+      log_info "  Updating ownership for: ${CONFIG_BASE_ON_HOST}"
+      chown -R "${puid}:${pgid}" "${CONFIG_BASE_ON_HOST}"
+  else
+      log_warn "  Config directory not found, skipping ownership: ${CONFIG_BASE_ON_HOST}"
+  fi
+
+  # 2. Set ownership for the main downloads folder
+  if [ -d "${downloads_parent}" ]; then
+      log_info "  Updating ownership for: ${downloads_parent}"
+      chown -R "${puid}:${pgid}" "${downloads_parent}"
+  else
+      log_warn "  Downloads directory not found, skipping ownership: ${downloads_parent}"
+  fi
+
+  # 3. Set ownership for all media folders
+  if [ -d "${media_parent}" ]; then
+      log_info "  Updating ownership for: ${media_parent}"
+      chown -R "${puid}:${pgid}" "${media_parent}"
+  else
+      log_warn "  Media directory not found, skipping ownership: ${media_parent}"
+  fi
   
   log_info "--- NAS Folder Preparation Complete ---"
 }
+
 
 #######################################
 # Installs the Docker stack.
