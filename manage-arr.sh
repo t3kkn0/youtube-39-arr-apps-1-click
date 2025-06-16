@@ -47,9 +47,11 @@ readonly LOCK_FILE="/var/lock/arr_stack_manager.lock"
 # Colors are enabled if the script is run in an interactive terminal.
 if [[ -t 1 ]]; then
   readonly C_RESET='\033]; then
-    rm -rf "${TMP_DIR}" || true
+    rm -rf "${TMP_DIR}" |
+| true
   fi
-  rm -f "${LOCK_FILE-}" || true
+  rm -f "${LOCK_FILE-}" |
+| true
 }
 trap cleanup EXIT
 
@@ -550,7 +552,8 @@ function main() {
     read -p "Enter your choice [0-8]: " choice
 
     # Clear screen after choice for better UX
-    tput clear || clear
+    tput clear |
+| clear
 
     case "$choice" in
       1) install_stack ;;
@@ -568,7 +571,8 @@ function main() {
     if [[ "$choice"!= "0" ]]; then
       read -n 1 -s -r -p "Press any key to return to the menu..."
       echo ""
-      tput clear || clear
+      tput clear |
+| clear
     fi
   done
 }
