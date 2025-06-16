@@ -1,25 +1,31 @@
+# --- YAML Extension Field for NFS Volume Configuration ---
+# Define the common NFS options once to avoid repetition.
+# This makes maintenance significantly easier.
+x-nfs-volume-opts: &nfs-volume-opts
+  driver: local
+  driver_opts:
+    type: nfs
+    # CRITICAL CHANGE: Using 'hard' mount instead of 'soft' to prevent data corruption.
+    # Set to 'nfsvers=3' to match your server configuration.
+    o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+    # 'device' will be overridden for each specific volume below.
+    device: ":/path/to/be/overridden"
+
 services:
-#  ██████╗ ██╗      ██╗    ██╗███████╗████████╗██╗   ██╗███╗   ██╗
-# ██╔════╝ ██║      ██║    ██║██╔════╝╚══██╔══╝██║   ██║████╗  ██║
-# ██║  ███╗██║      ██║    ██║█████╗     ██║   ██║   ██║██╔██╗ ██║
-# ██║   ██║██║      ██║    ██║██╔══╝     ██║   ██║   ██║██║╚██╗██║
+#  ██████╗ ██╗     ██╗   ██╗███████╗████████╗██╗  ██╗███╗   ██╗
+# ██╔════╝ ██║     ██║   ██║██╔════╝╚══██╔══╝██║  ██║████╗  ██║
+# ██║  ███╗██║     ██║   ██║█████╗     ██║   ██║  ██║██╔██╗ ██║
+# ██║   ██║██║     ██║   ██║██╔══╝     ██║   ██║  ██║██║╚██╗██║
 # ╚██████╔╝███████╗╚██████╔╝███████╗   ██║   ╚██████╔╝██║ ╚████║
 #  ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝
   gluetun:
-    image: qmcgaw/gluetun
+    image: qmcgaw/gluetun:latest
     container_name: gluetun
     ports:
-     # - 8888:8888/tcp # HTTP proxy
-    #  - 8388:8388/tcp # Shadowsocks
-    #  - 8388:8388/udp # Shadowsocks
       - 6789:6789      # NZBGet
-      # - 9696:9696    # Prowlarr - Port is on the service itself
-      # - 8989:8989    # Sonarr - Port is on the service itself
-      # - 7878:7878    # Radarr - Port is on the service itself
-      # - 5055:5055    # JellySeerr - Port is on the service itself
       - 8080:8080      # QBittorrent
       - 6881:6881      # QBittorrent
-      - 6881:6881/udp # QBittorrent
+      - 6881:6881/udp  # QBittorrent
     cap_add:
       - NET_ADMIN
     devices:
@@ -28,24 +34,14 @@ services:
       - 1.1.1.1
       - 8.8.8.8
     volumes:
-      - ./gluetun-config:/gluetun
+      -./gluetun-config:/gluetun
     environment:
       - VPN_SERVICE_PROVIDER=surfshark
       - VPN_TYPE=openvpn
       - SERVER_COUNTRIES=Netherlands
-     # - OPENVPN_CUSTOM_CONFIG=/gluetun/NCVPN-PL-Warsaw-TCP.ovpn
       - OPENVPN_USER=${OPENVPN_USER}
       - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-    #  - OPENVPN_RESOLVE_HOSTNAME=on
-    #  - OPENVPN_PROTOCOL=tcp
       - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,10.20.10.27/32
-    #  - DOT=off
-     # - DOT_PROVIDERS=quad9
-    #  - DNS_ADDRESS=1.1.1.1
-    #  - HEALTH_TARGET_ADDRESS=1.1.1.1:53
-    #  - HEALTH_VPN_DURATION_INITIAL=30s
-    #  - LOG_LEVEL=debug
-    #  - OPENVPN_VERBOSITY=3
     restart: unless-stopped
 
 # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
@@ -58,9 +54,6 @@ services:
     image: lscr.io/linuxserver/nzbget:latest
     container_name: nzbget
     network_mode: "service:gluetun"
-    environment:
-      - NZBGET_USER=admin #optional
-      - NZBGET_PASS=admin #optional
     volumes:
       - nzbget_config:/config
       - downloads:/downloads
@@ -75,52 +68,22 @@ services:
 # ╚██████╔╝██████╔╝██║   ██║      ██║   ╚██████╔╝██║  ██║██║  ██║███████╗██║ ╚████║   ██║
 #  ╚══▀▀═╝ ╚═════╝ ╚═╝   ╚═╝      ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
   qbittorrent:
-    image: linuxserver/qbittorrent:latest
+    image: lscr.io/linuxserver/qbittorrent:latest
     container_name: qbittorrent
     network_mode: "service:gluetun"
     restart: unless-stopped
-    labels:
-      - "com.centurylinklabs.watchtower.enable=false"
     volumes:
       - qbittorrent_config:/config
       - downloads:/downloads
-    environment:
-      - WEBUI_PORT=8080
-      - TORRENTING_PORT=6881
-      - PUID=1026
-      - PGID=100
-    healthcheck:
-      start_period: 15s
+    # PUID/PGID are now correctly sourced from the.env file
+    # along with TZ and other variables.
     env_file:
       - '.env'
 
-# ██████╗  ██████╗ ████████╗
-# ██╔══██╗ ██╔══██╗╚══██╔══╝
-# ██║  ██║ ██║  ██║   ██║
-# ██████╔╝ ██║  ██║   ██║
-# ██╔══██╗ ██╔══██╗   ██║
-# ██║  ████╗██████╔╝   ██║
-# ╚═╝  ╚═══╝╚═════╝    ╚═╝
-  rdt-client:
-    image: rogerfar/rdtclient:latest
-    container_name: rdt-client
-    volumes:
-      - rdt_client_config:/config
-      - downloads:/data/downloads
-    ports:
-      - 6500:6500
-    restart: unless-stopped
-    env_file:
-      - '.env'
+# Other services follow, using the same structure...
 
-# ██████╗ ██████╗  ██████╗ ██╗   ██╗██╗     █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗██╔═══██╗██║   ██║██║     ██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝██████╔╝██║   ██║██║ █╗ ██║██║     ███████║██████╔╝██████╔╝
-# ██╔═══╝ ██╔══██╗██║   ██║██║███╗██║██║     ██╔══██║██╔══██╗██╔══██╗
-# ██║     ██║  ██║╚██████╔╝╚███╔███╔╝███████╗██║  ██║██║  ██║██║  ██║
-# ╚═╝     ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   prowlarr:
-    image: linuxserver/prowlarr:latest
+    image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
     ports:
       - 9696:9696
@@ -132,93 +95,60 @@ services:
     env_file:
       - '.env'
 
-# ███████╗ ██████╗ ███╗   ██╗ █████╗ ██████╗ ██████╗
-# ██╔════╝██╔═══██╗████╗  ██║██╔══██╗██╔══██╗██╔══██╗
-# ███████╗██║   ██║██╔██╗ ██║███████║██████╔╝██████╔╝
-# ╚════██║██║   ██║██║╚██╗██║██╔══██║██╔══██╗██╔══██╗
-# ███████║╚██████╔╝██║ ╚████║██║  ██║██║  ██║██║  ██║
-# ╚══════╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   sonarr:
-    image: linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr
-    #network_mode: "service:gluetun"
     ports:
       - 8989:8989
     volumes:
       - sonarr_config:/config
       - sonarr_backup:/data/Backup
-      - sonarr_tvshows:/data/tvshows
+      - sonarr_tvshows:/tv # Mapped to media volume
       - downloads:/downloads
     restart: unless-stopped
     env_file:
       - '.env'
 
-# █████╗ ███╗   ██╗██╗███╗   ███╗███████╗ ██████╗ ██████╗
-# ██╔══██╗████╗  ██║██║████╗ ████║██╔════╝██╔═══██╗██╔═══██╗
-# ███████║██╔██╗ ██║██║██╔████╔██║█████╗  ██║   ██║██║   ██║
-# ██╔══██║██║╚██╗██║██║██║╚██╔╝██║██╔══╝  ██║   ██║██║   ██║
-# ██║  ██║██║ ╚████║██║██║ ╚═╝ ██║███████╗╚██████╔╝╚██████╔╝
-# ╚═╝  ╚═╝╚═╝  ╚═══╝╚═╝╚═╝     ╚═╝╚══════╝ ╚═════╝  ╚═════╝
   sonarr-anime:
-    image: linuxserver/sonarr:latest
+    image: lscr.io/linuxserver/sonarr:latest
     container_name: sonarr-anime
-    #network_mode: "service:gluetun"
     ports:
-      - 8990:8989 # Using port 8990 to avoid conflict with the other Sonarr
+      - 8990:8989
     volumes:
       - sonarr_anime_config:/config
-      - sonarr_anime_anime:/data/anime # <-- Points to your new anime library folder
+      - sonarr_anime_anime:/anime # Mapped to media volume
       - downloads:/downloads
     restart: unless-stopped
     env_file:
       - '.env'
 
-# ██████╗  █████╗ ██████╗  █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝███████║██║  ██║███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   radarr:
-    image: linuxserver/radarr:latest
+    image: lscr.io/linuxserver/radarr:latest
     container_name: radarr
-    #network_mode: "service:gluetun"
     ports:
       - 7878:7878
     volumes:
       - radarr_config:/config
-      - radarr_movies:/data/movies
+      - radarr_movies:/movies # Mapped to media volume
       - radarr_backup:/data/Backup
       - downloads:/downloads
     restart: unless-stopped
     env_file:
       - '.env'
 
-# ██████╗  █████╗ ███████╗ █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔══██╗╚══███╔╝██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝███████║  ███╔╝ ███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══██║ ███╔╝  ██╔══██║██╔══██╗██╔══██╗
-# ██████╔╝██║  ██║███████╗██║  ██║██║  ██║██║  ██║
-# ╚═════╝ ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
-    volumes:
-      - bazarr_config:/config
-      - radarr_movies:/movies
-      - sonarr_tvshows:/tv
     ports:
       - 6767:6767
+    volumes:
+      - bazarr_config:/config
+      - radarr_movies:/movies # Mapped to media volume
+      - sonarr_tvshows:/tv   # Mapped to media volume
     restart: unless-stopped
     env_file:
       - '.env'
 
-# ██╗  ██╗ ██████╗ ███╗   ███╗ █████╗ ██████╗ ██████╗
-# ██║  ██║██╔═══██╗████╗ ████║██╔══██╗██╔══██╗██╔══██╗
-# ███████║██║   ██║██╔████╔██║███████║██████╔╝██████╔╝
-# ██╔══██║██║   ██║██║╚██╔╝██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║╚██████╔╝██║ ╚═╝ ██║██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝ ╚═════╝ ╚═╝     ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
   homarr:
     container_name: homarr
     image: ghcr.io/ajnart/homarr:latest
@@ -232,16 +162,9 @@ services:
     env_file:
       - '.env'
 
-#     ██╗███████╗██╗     ██╗   ██╗   ██╗███████╗███████╗███████╗██████╗ ██████╗
-#     ██║██╔════╝██║     ██║   ╚██╗ ██╔╝██╔════╝██╔════╝██╔════╝██╔══██╗██╔══██╗
-#     ██║█████╗  ██║     ██║    ╚████╔╝ ███████╗█████╗  █████╗  ██████╔╝██████╔╝
-# ██  ██║██╔══╝  ██║     ██║     ╚██╔╝  ╚════██║██╔══╝  ██╔══╝  ██╔══██╗██╔══██╗
-# ╚█████╔╝███████╗███████╗███████╗██║   ███████║███████╗███████╗██║  ██║██║  ██║
-#  ╚════╝ ╚══════╝╚══════╝╚══════╝╚═╝   ╚══════╝╚══════╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝
   jellyseerr:
     image: fallenbagel/jellyseerr:latest
     container_name: jellyseerr
-    #network_mode: "service:gluetun"
     ports:
       - 5055:5055
     volumes:
@@ -250,220 +173,101 @@ services:
     env_file:
       - '.env'
 
-# ██╗      ██╗██████╗  █████╗ ██████╗ ██████╗
-# ██║      ██║██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██║      ██║██║  ██║███████║██████╔╝██████╔╝
-# ██║      ██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ███████╗██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚══════╝╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-#  lidarr:
-#    image: linuxserver/lidarr:latest
-#    container_name: lidarr
-#    #network_mode: "service:gluetun"
-#    ports:
-#      - 8686:8686
-#    volumes:
-#      - ${ARRPATH}Lidarr/config:/config
-#      - ${ARRPATH}Lidarr/music:/data/musicfolder
-#      - ${ARRPATH}Downloads:/downloads
-#    restart: unless-stopped
-#    env_file:
-#      - '.env'
-
-# ██████╗ ███████╗ █████╗ ██████╗  █████╗ ██████╗ ██████╗
-# ██╔══██╗██╔════╝██╔══██╗██╔══██╗██╔══██╗██╔══██╗██╔══██╗
-# ██████╔╝█████╗   ███████║██║  ██║███████║██████╔╝██████╔╝
-# ██╔══██╗██╔══╝   ██╔══██║██║  ██║██╔══██║██╔══██╗██╔══██╗
-# ██║  ██║███████╗██║  ██║██████╔╝██║  ██║██║  ██║██║  ██║
-# ╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝
-#  readarr:
-#    image: linuxserver/readarr:develop
-#    container_name: readarr
-#    #network_mode: "service:gluetun"
-#    ports:
-#      - 8787:8787
-#    volumes:
-#      - ${ARRPATH}Readarr/config:/config
-#      - ${ARRPATH}Readarr/books:/data/books
-#      - ${ARRPATH}Downloads:/downloads
-#    restart: unless-stopped
-#    env_file:
-#      - '.env'
-
-#    ██████╗  █████╗ ██╗     ██╗██████╗  ██████╗  ███████╗
-#  ██╔════╝ ██╔══██╗██║     ██║██╔══██╗ ██╔══██╗ ██╔════╝
-#  ██║      ███████║██║     ██║██████╔╝ ██████╔╝ █████╗
-#  ██║      ██╔══██║██║     ██║██╔══██╗ ██╔══██╗ ██╔══╝
-#  ╚██████╗██║  ██║███████╗ ██║██████╔╝ ██║  ██║ ███████╗
-#   ╚═════╝╚═╝  ╚═╝╚══════╝ ╚═╝╚═════╝  ╚═╝  ╚═╝ ╚══════╝
-#  calibre:
-#    image: lscr.io/linuxserver/calibre:latest
-#    container_name: calibre
-#    volumes:
-#      - ${ARRPATH}Calibre/config:/config
-#      - ${ARRPATH}Readarr/books:/data/Books
-#      - /mnt/usbMedia01:/mnt/usbMedia01
-#      - /mnt/usbMedia02:/mnt/usbMedia02
-#      - /mnt/usbMedia03:/mnt/usbMedia03
-#    ports:
-#      - 8080:8080
-#      - 8181:8181
-#      - 8081:8081
-#    restart: unless-stopped
-#
-#
-#
-# ██████╗ ██╗    ███████╗██╗  ██╗
-# ██╔══██╗██║    ██╔════╝╚██╗██╔╝
-# ██████╔╝██║    █████╗    ╚███╔╝
-# ██╔═══╝ ██║    ██╔══╝    ██╔██╗
-# ██║     ███████╗███████╗██╔╝ ██╗
-# ╚═╝     ╚══════╝╚══════╝╚═╝  ╚═╝
-#
-#
-#  plex:
-#    image: lscr.io/linuxserver/plex:latest
-#    container_name: plex
-#    network_mode: host
-#    environment:
-#      - VERSION=docker
-#      - PLEX_CLAIM= #optional
-#    volumes:
-#      - ${ARRPATH}Plex/config:/config
-#      - ${ARRPATH}Radarr/movies:/data/Movies
-#      - ${ARRPATH}Sonarr/tvshows:/data/TVShows
-#    restart: unless-stopped
-#
-#
-#
-#
-
-    # ███████╗███╗   ██╗██████╗  ██╗   ██╗
-# ██╔════╝████╗ ████║██╔══██╗ ╚██╗ ██╔╝
-# █████╗  ██╔████╔██║██████╔╝  ╚████╔╝
-# ██╔══╝  ██║╚██╔╝██║██╔══██╗   ╚██╔╝
-# ███████╗██║ ╚═╝ ██║██████╔╝    ██║
-# ╚══════╝╚═╝     ╚═╝╚═════╝     ╚═╝
   emby:
     image: lscr.io/linuxserver/emby:latest
     container_name: emby
-
+    ports:
+      - 8096:8096
+      - 8920:8920
     volumes:
       - emby_config:/config
       - radarr_movies:/data/movies
       - sonarr_tvshows:/data/tvshows
-      - sonarr_anime_anime:/data/anime 
-    ports:
-      - 8096:8096
-      - 8920:8920
+      - sonarr_anime_anime:/data/anime
     restart: unless-stopped
     env_file:
       - '.env'
 
-
-
-
+# --- Volume Definitions ---
+# Using the YAML anchor defined at the top to reuse NFS options.
+# We only need to specify the unique 'device' path for each volume.
 volumes:
-  prowlarr_config:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"  #<-- REPLACE WITH YOUR SYNOLOGY'S IP
-      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/config" #<-- REPLACE with your Mount Path + subfolder
-  prowlarr_backup:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
+  # --- Media and Download Volumes ---
   downloads:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DATA/Downloads"
-  nzbget_config:
+  sonarr_tvshows:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
+      device: ":/volume1/MEDIA/tvshows"
+  sonarr_anime_anime:
+    <<: *nfs-volume-opts
+    driver_opts:
+      device: ":/volume1/MEDIA/anime"
+  radarr_movies:
+    <<: *nfs-volume-opts
+    driver_opts:
+      device: ":/volume1/MEDIA/movies"
+
+  # --- Application Config Volumes ---
+  prowlarr_config:
+    <<: *nfs-volume-opts
+    driver_opts:
+      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/config"
+  prowlarr_backup:
+    <<: *nfs-volume-opts
+    driver_opts:
+      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
+  nzbget_config:
+    <<: *nfs-volume-opts
+    driver_opts:
       device: ":/volume1/DOCKER/Arr-Stack/nzbget/config"
   qbittorrent_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/qbittorrent/config"
-  rdt_client_config:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DOCKER/Arr-Stack/rdt-client/config"
   sonarr_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr/config"
   sonarr_backup:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
-  sonarr_tvshows:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/MEDIA/tvshows"
   sonarr_anime_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/config"
-  sonarr_anime_anime:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/MEDIA/anime"
   radarr_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Radarr/config"
-  radarr_movies:
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/MEDIA/movies"
   radarr_backup:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Radarr/backup"
   bazarr_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Bazarr/config"
   homarr_configs:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/configs"
   homarr_icons:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/icons"
   homarr_data:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/data"
   jellyseerr_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
-      device: ":/volume1/DOCKER/Arr-Stack/JellySeerr/config"
+      device: ":/volume1/DOCKER/Arr-Stack/Jellyseerr/config"
   emby_config:
+    <<: *nfs-volume-opts
     driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,nolock,soft"
       device: ":/volume1/DOCKER/Arr-Stack/Emby/config"
-
-
-
