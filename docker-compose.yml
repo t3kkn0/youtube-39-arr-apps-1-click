@@ -1,14 +1,11 @@
 # --- YAML Extension Field for NFS Volume Configuration ---
-# Define the common NFS options once to avoid repetition.
-# This makes maintenance significantly easier.
+# This anchor is no longer used for the entire volume but is kept for reference.
+# The repetition in the volumes block below is necessary due to how Docker Compose handles YAML merging.
 x-nfs-volume-opts: &nfs-volume-opts
   driver: local
   driver_opts:
     type: nfs
-    # CRITICAL CHANGE: Using 'hard' mount instead of 'soft' to prevent data corruption.
-    # Set to 'nfsvers=3' to match your server configuration.
     o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-    # 'device' will be overridden for each specific volume below.
     device: ":/path/to/be/overridden"
 
 services:
@@ -34,7 +31,6 @@ services:
       - 1.1.1.1
       - 8.8.8.8
     volumes:
-      # CORRECTED: Added space after the hyphen and fixed indentation.
       - ./gluetun-config:/gluetun
     environment:
       - VPN_SERVICE_PROVIDER=surfshark
@@ -76,8 +72,6 @@ services:
     volumes:
       - qbittorrent_config:/config
       - downloads:/downloads
-    # PUID/PGID are now correctly sourced from the .env file
-    # along with TZ and other variables.
     env_file:
       - '.env'
 
@@ -104,7 +98,7 @@ services:
     volumes:
       - sonarr_config:/config
       - sonarr_backup:/data/Backup
-      - sonarr_tvshows:/tv # Mapped to media volume
+      - sonarr_tvshows:/tv
       - downloads:/downloads
     restart: unless-stopped
     env_file:
@@ -117,7 +111,7 @@ services:
       - 8990:8989
     volumes:
       - sonarr_anime_config:/config
-      - sonarr_anime_anime:/anime # Mapped to media volume
+      - sonarr_anime_anime:/anime
       - downloads:/downloads
     restart: unless-stopped
     env_file:
@@ -130,7 +124,7 @@ services:
       - 7878:7878
     volumes:
       - radarr_config:/config
-      - radarr_movies:/movies # Mapped to media volume
+      - radarr_movies:/movies
       - radarr_backup:/data/Backup
       - downloads:/downloads
     restart: unless-stopped
@@ -144,8 +138,8 @@ services:
       - 6767:6767
     volumes:
       - bazarr_config:/config
-      - radarr_movies:/movies # Mapped to media volume
-      - sonarr_tvshows:/tv   # Mapped to media volume
+      - radarr_movies:/movies
+      - sonarr_tvshows:/tv
     restart: unless-stopped
     env_file:
       - '.env'
@@ -190,85 +184,123 @@ services:
       - '.env'
 
 # --- Volume Definitions ---
-# Using the YAML anchor defined at the top to reuse NFS options.
-# We only need to specify the unique 'device' path for each volume.
+# CORRECTED: The driver_opts section is now fully defined for each
+# volume to prevent the YAML anchor from overwriting required options.
 volumes:
   # --- Media and Download Volumes ---
   downloads:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DATA/Downloads"
   sonarr_tvshows:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/MEDIA/tvshows"
   sonarr_anime_anime:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/MEDIA/anime"
   radarr_movies:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/MEDIA/movies"
 
   # --- Application Config Volumes ---
   prowlarr_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/config"
   prowlarr_backup:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
   nzbget_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/nzbget/config"
   qbittorrent_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/qbittorrent/config"
   sonarr_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr/config"
   sonarr_backup:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
   sonarr_anime_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/config"
   radarr_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Radarr/config"
   radarr_backup:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Radarr/backup"
   bazarr_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Bazarr/config"
   homarr_configs:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/configs"
   homarr_icons:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/icons"
   homarr_data:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Homarr/data"
   jellyseerr_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Jellyseerr/config"
   emby_config:
-    <<: *nfs-volume-opts
+    driver: local
     driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Emby/config"
