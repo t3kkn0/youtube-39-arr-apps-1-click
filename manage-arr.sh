@@ -583,7 +583,7 @@ function destroy_config_folders() {
   fi
 
   log_info "Confirmation received. Proceeding with deletion..."
-  if rm -rf "${CONFIG_BASE_ON_HOST}"; then
+  if rm -rf /mnt/NAS-DOCKER/Arr-Stack; then
     log_info "--- Configuration Folder Destruction Complete ---"
   else
     log_error "--- Destruction Failed ---"
