@@ -124,6 +124,7 @@ services:
       - 8990:8989
     volumes:
       - sonarr_anime_config:/config
+      - sonarr_anime_backup:/data/Backup
       - sonarr_anime_anime:/anime
       - downloads:/downloads
     restart: unless-stopped
@@ -265,6 +266,12 @@ volumes:
       type: nfs
       o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
+  sonarr_anime_backup:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/backup"
   sonarr_anime_config:
     driver: local
     driver_opts:
