@@ -131,6 +131,7 @@ services:
     env_file:
       - '.env'
 
+
   bazarr:
     image: lscr.io/linuxserver/bazarr:latest
     container_name: bazarr
@@ -138,8 +139,9 @@ services:
       - 6767:6767
     volumes:
       - bazarr_config:/config
-      - radarr_movies:/movies
-      - sonarr_tvshows:/tv
+      - radarr_movies:/movies # Mapped to media volume
+      - sonarr_tvshows:/tv   # Mapped to media volume
+      - sonarr_anime_anime:/anime # <-- ADD THIS LINE to grant access to your anime library
     restart: unless-stopped
     env_file:
       - '.env'
