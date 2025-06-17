@@ -241,6 +241,7 @@ function prepare_nas_folders() {
     "${CONFIG_BASE_ON_HOST}/Homarr/data"
     "${CONFIG_BASE_ON_HOST}/Jellyseerr/config"
     "${CONFIG_BASE_ON_HOST}/Emby/config"
+    "${CONFIG_BASE_ON_HOST}/Flaresolverr/config"
   )
 
   log_info "Creating required directories..."
