@@ -319,7 +319,7 @@ volumes:
       type: nfs
       o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
       device: ":/volume1/DOCKER/Arr-Stack/Emby/config"
- flaresolverr_config:
+  flaresolverr_config:
     driver: local
     driver_opts:
       type: nfs
