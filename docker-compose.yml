@@ -75,6 +75,19 @@ services:
 
   # Other services follow, using the same structure...
 
+
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+     - LOG_LEVEL=info
+     - TZ=Europe/Warsaw # Set your timezone
+    # No need to expose the port to the host if only other containers need it
+    # But if you want to access its UI/API from your host, uncomment the line below
+    # ports:
+      - "8191:8191"
+    restart: unless-stopped
+    
   prowlarr:
     image: lscr.io/linuxserver/prowlarr:latest
     container_name: prowlarr
