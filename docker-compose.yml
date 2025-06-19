@@ -9,195 +9,190 @@ x-nfs-volume-opts: &nfs-volume-opts
     device: ":/path/to/be/overridden"
 
 services:
-  #  ██████╗ ██╗      ██╗    ██╗███████╗████████╗██╗  ██╗███╗   ██╗
-  # ██╔════╝ ██║      ██║    ██║██╔════╝╚══██╔══╝██║  ██║████╗  ██║
-  # ██║  ███╗██║      ██║    ██║█████╗      ██║   ██║  ██║██╔██╗ ██║
-  # ██║   ██║██║      ██║    ██║██╔══╝      ██║   ██║  ██║██║╚██╗██║
-  # ╚██████╔╝███████╗╚██████╔╝███████╗    ██║   ╚██████╔╝██║ ╚████║
-  #  ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝    ╚═╝    ╚═════╝ ╚═╝  ╚═══╝
-  gluetun:
-    image: qmcgaw/gluetun:latest
-    container_name: gluetun
-    ports:
-      - 8080:8080      # QBittorrent
-      - 6881:6881      # QBittorrent
-      - 6881:6881/udp  # QBittorrent
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun:/dev/net/tun
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
-    volumes:
-      - ./gluetun-config:/gluetun
-    environment:
-      - VPN_SERVICE_PROVIDER=surfshark
-      - VPN_TYPE=openvpn
-      - SERVER_COUNTRIES=Netherlands
-      - OPENVPN_USER=${OPENVPN_USER}
-      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
-      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,10.20.10.27/32
-    restart: unless-stopped
+  #  ██████╗ ██╗     ██╗    ██╗███████╗████████╗██╗  ██╗███╗   ██╗
+  # ██╔════╝ ██║     ██║    ██║██╔════╝╚══██╔══╝██║  ██║████╗  ██║
+  # ██║  ███╗██║     ██║    ██║█████╗     ██║   ██║  ██║██╔██╗ ██║
+  # ██║   ██║██║     ██║    ██║██╔══╝     ██║   ██║  ██║██║╚██╗██║
+  # ╚██████╔╝███████╗╚██████╔╝███████╗   ██║   ╚██████╔╝██║ ╚████║
+  #  ╚═════╝ ╚══════╝ ╚═════╝ ╚══════╝   ╚═╝    ╚═════╝ ╚═╝  ╚═══╝
+  gluetun:
+    image: qmcgaw/gluetun:latest
+    container_name: gluetun
+    ports:
+      - 8080:8080      # QBittorrent
+      - 6881:6881      # QBittorrent
+      - 6881:6881/udp  # QBittorrent
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
+    volumes:
+      - ./gluetun-config:/gluetun
+    environment:
+      - VPN_SERVICE_PROVIDER=surfshark
+      - VPN_TYPE=openvpn
+      - SERVER_COUNTRIES=Netherlands
+      - OPENVPN_USER=${OPENVPN_USER}
+      - OPENVPN_PASSWORD=${OPENVPN_PASSWORD}
+      - FIREWALL_OUTBOUND_SUBNETS=192.168.1.0/24,10.20.10.27/32
+    restart: unless-stopped
 
-  # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
-  # ████╗  ██║╚══███╔╝██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
-  # ██╔██╗ ██║  ███╔╝ ██████╔╝██║  ███╗█████╗      ██║
-  # ██║╚██╗██║ ███╔╝  ██╔══██╗██║   ██║██╔══╝      ██║
-  # ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗    ██║
-  # ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝    ╚═╝
-  nzbget:
-    image: lscr.io/linuxserver/nzbget:latest
-    container_name: nzbget
-    volumes:
-      - nzbget_config:/config
-      - downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  # ███╗   ██╗███████╗██████╗  ██████╗ ███████╗████████╗
+  # ████╗  ██║╚══███╔╝██╔══██╗██╔════╝ ██╔════╝╚══██╔══╝
+  # ██╔██╗ ██║  ███╔╝ ██████╔╝██║  ███╗█████╗     ██║
+  # ██║╚██╗██║ ███╔╝  ██╔══██╗██║   ██║██╔══╝     ██║
+  # ██║ ╚████║███████╗██████╔╝╚██████╔╝███████╗   ██║
+  # ╚═╝  ╚═══╝╚══════╝╚═════╝  ╚═════╝ ╚══════╝   ╚═╝
+  nzbget:
+    image: lscr.io/linuxserver/nzbget:latest
+    container_name: nzbget
+    volumes:
+      - nzbget_config:/config
+      - downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  # ██████╗ ██████╗ ██╗████████╗████████╗ ██████╗ ██████╗ ██████╗ ███████╗███╗   ██╗████████╗
-  # ██╔═══██╗██╔══██╗██║╚══██╔══╝╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝████╗  ██║╚══██╔══╝
-  # ██║   ██║██████╔╝██║   ██║      ██║   ██║   ██║██████╔╝██████╔╝█████╗  ██╔██╗ ██║   ██║
-  # ██║▄▄ ██║██╔══██╗██║   ██║      ██║   ██║   ██║██╔══██╗██╔══██╗██╔══╝  ██║╚██╗██║   ██║
-  # ╚██████╔╝██████╔╝██║   ██║      ██║   ╚██████╔╝██║  ██║██║  ██║███████╗██║ ╚████║   ██║
-  #  ╚══▀▀═╝ ╚═════╝ ╚═╝   ╚═╝      ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
-  qbittorrent:
-    image: lscr.io/linuxserver/qbittorrent:latest
-    container_name: qbittorrent
-    network_mode: "service:gluetun"
-    restart: unless-stopped
-    volumes:
-      - qbittorrent_config:/config
-      - downloads:/downloads
-    env_file:
-      - '.env'
+  # ██████╗ ██████╗ ██╗████████╗████████╗ ██████╗ ██████╗ ██████╗ ███████╗███╗   ██╗████████╗
+  # ██╔═══██╗██╔══██╗██║╚══██╔══╝╚══██╔══╝██╔═══██╗██╔══██╗██╔══██╗██╔════╝████╗  ██║╚══██╔══╝
+  # ██║   ██║██████╔╝██║   ██║      ██║   ██║   ██║██████╔╝██████╔╝█████╗  ██╔██╗ ██║   ██║
+  # ██║▄▄ ██║██╔══██╗██║   ██║      ██║   ██║   ██║██╔══██╗██╔══██╗██╔══╝  ██║╚██╗██║   ██║
+  # ╚██████╔╝██████╔╝██║   ██║      ██║   ╚██████╔╝██║  ██║██║  ██║███████╗██║ ╚████║   ██║
+  #  ╚══▀▀═╝ ╚═════╝ ╚═╝   ╚═╝      ╚═╝    ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═══╝   ╚═╝
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    network_mode: "service:gluetun"
+    restart: unless-stopped
+    volumes:
+      - qbittorrent_config:/config
+      - downloads:/downloads
+    env_file:
+      - '.env'
 
-  # Other services follow, using the same structure...
+  # Other services follow, using the same structure...
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    environment:
+     - LOG_LEVEL=info
+     - TZ=Europe/Warsaw # Set your timezone
+    ports:
+      - "8191:8191"
+    volumes:
+      - flaresolverr_config:/config
+    restart: unless-stopped
+    
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    ports:
+      - 9696:9696
+    volumes:
+      - prowlarr_config:/config
+      - prowlarr_backup:/data/Backup
+      - downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    ports:
+      - 8989:8989
+    volumes:
+      - sonarr_config:/config
+      - sonarr_backup:/data/Backup
+      - sonarr_tvshows:/tv
+      - downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
-    environment:
-     - LOG_LEVEL=info
-     - TZ=Europe/Warsaw # Set your timezone
-    # No need to expose the port to the host if only other containers need it
-    # But if you want to access its UI/API from your host, uncomment the line below
-    ports:
-      - "8191:8191"
-    volumes:
-      - flaresolverr_config:/config
-    restart: unless-stopped
-    
-  prowlarr:
-    image: lscr.io/linuxserver/prowlarr:latest
-    container_name: prowlarr
-    ports:
-      - 9696:9696
-    volumes:
-      - prowlarr_config:/config
-      - prowlarr_backup:/data/Backup
-      - downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  sonarr-anime:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr-anime
+    ports:
+      - 8990:8989
+    volumes:
+      - sonarr_anime_config:/config
+      - sonarr_anime_backup:/data/Backup
+      - sonarr_anime_anime:/anime
+      - downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  sonarr:
-    image: lscr.io/linuxserver/sonarr:latest
-    container_name: sonarr
-    ports:
-      - 8989:8989
-    volumes:
-      - sonarr_config:/config
-      - sonarr_backup:/data/Backup
-      - sonarr_tvshows:/tv
-      - downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    ports:
+      - 7878:7878
+    volumes:
+      - radarr_config:/config
+      - radarr_movies:/movies
+      - radarr_backup:/data/Backup
+      - downloads:/downloads
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  sonarr-anime:
-    image: lscr.io/linuxserver/sonarr:latest
-    container_name: sonarr-anime
-    ports:
-      - 8990:8989
-    volumes:
-      - sonarr_anime_config:/config
-      - sonarr_anime_backup:/data/Backup
-      - sonarr_anime_anime:/anime
-      - downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    ports:
+      - 6767:6767
+    volumes:
+      - bazarr_config:/config
+      - radarr_movies:/movies # Mapped to media volume
+      - sonarr_tvshows:/tv   # Mapped to media volume
+      - sonarr_anime_anime:/anime # <-- ADD THIS LINE to grant access to your anime library
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  radarr:
-    image: lscr.io/linuxserver/radarr:latest
-    container_name: radarr
-    ports:
-      - 7878:7878
-    volumes:
-      - radarr_config:/config
-      - radarr_movies:/movies
-      - radarr_backup:/data/Backup
-      - downloads:/downloads
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  homarr:
+    container_name: homarr
+    image: ghcr.io/ajnart/homarr:latest
+    restart: unless-stopped
+    volumes:
+      - homarr_configs:/app/data/configs
+      - homarr_icons:/app/public/icons
+      - homarr_data:/data
+    ports:
+      - '7575:7575'
+    env_file:
+      - '.env'
 
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    ports:
+      - 5055:5055
+    volumes:
+      - jellyseerr_config:/app/config
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
-  bazarr:
-    image: lscr.io/linuxserver/bazarr:latest
-    container_name: bazarr
-    ports:
-      - 6767:6767
-    volumes:
-      - bazarr_config:/config
-      - radarr_movies:/movies # Mapped to media volume
-      - sonarr_tvshows:/tv   # Mapped to media volume
-      - sonarr_anime_anime:/anime # <-- ADD THIS LINE to grant access to your anime library
-    restart: unless-stopped
-    env_file:
-      - '.env'
-
-  homarr:
-    container_name: homarr
-    image: ghcr.io/ajnart/homarr:latest
-    restart: unless-stopped
-    volumes:
-      - homarr_configs:/app/data/configs
-      - homarr_icons:/app/public/icons
-      - homarr_data:/data
-    ports:
-      - '7575:7575'
-    env_file:
-      - '.env'
-
-  jellyseerr:
-    image: fallenbagel/jellyseerr:latest
-    container_name: jellyseerr
-    ports:
-      - 5055:5055
-    volumes:
-      - jellyseerr_config:/app/config
-    restart: unless-stopped
-    env_file:
-      - '.env'
-
-  emby:
-    image: lscr.io/linuxserver/emby:latest
-    container_name: emby
-    ports:
-      - 8096:8096
-      - 8920:8920
-    volumes:
-      - emby_config:/config
-      - radarr_movies:/data/movies
-      - sonarr_tvshows:/data/tvshows
-      - sonarr_anime_anime:/data/anime
-    restart: unless-stopped
-    env_file:
-      - '.env'
+  emby:
+    image: lscr.io/linuxserver/emby:latest
+    container_name: emby
+    ports:
+      - 8096:8096
+      - 8920:8920
+    volumes:
+      - emby_config:/config
+      - radarr_movies:/data/movies
+      - sonarr_tvshows:/data/tvshows
+      - sonarr_anime_anime:/data/anime
+    restart: unless-stopped
+    env_file:
+      - '.env'
 
 # --- Volume Definitions ---
 volumes:
