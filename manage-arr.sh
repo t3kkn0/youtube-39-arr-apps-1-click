@@ -1,3 +1,4 @@
+cat << 'EOF' > ./manage-arr.sh
 #!/usr/bin/env bash
 #
 ################################################################################
@@ -102,8 +103,8 @@ function log() {
   echo -e "${color}[${level}]${C_RESET} ${message}"
 }
 
-function log_info()  { log "INFO" "${C_GREEN}" "$1"; }
-function log_warn()  { log "WARN" "${C_YELLOW}" "$1"; }
+function log_info() { log "INFO" "${C_GREEN}" "$1"; }
+function log_warn() { log "WARN" "${C_YELLOW}" "$1"; }
 function log_error() { log "ERROR" "${C_RED}" "$1" >&2; }
 function log_fatal() { log "FATAL" "${C_RED}" "$1" >&2; exit 1; }
 function log_prompt() { echo -e "${C_CYAN}==>${C_RESET} $1"; }
@@ -622,3 +623,4 @@ function main() {
 
 # Start the script
 main "$@"
+EOF
