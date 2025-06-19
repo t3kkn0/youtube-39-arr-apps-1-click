@@ -38,6 +38,7 @@ readonly CONFIG_BASE_ON_HOST="/var/lib/docker/volumes/arr-stack_config"
 readonly REQUIRED_MOUNTS=(
   "/mnt/NAS-DATA"
   "/mnt/NAS-MEDIA"
+  "/mnt/NAS-DOCKER"
 )
 # Lock file to prevent concurrent script execution.
 readonly LOCK_FILE="/var/lock/arr_stack_manager.lock"
