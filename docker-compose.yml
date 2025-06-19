@@ -196,72 +196,70 @@ services:
 
 # --- Volume Definitions ---
 volumes:
-  # --- Media and Download Volumes (On NAS via NFS) ---
-  downloads:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/DATA/Downloads"
-  sonarr_tvshows:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/MEDIA/tvshows"
-  sonarr_anime_anime:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/MEDIA/anime"
-  radarr_movies:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/MEDIA/movies"
+  # --- Media and Download Volumes (On NAS via NFS) ---
+  downloads:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DATA/Downloads"
+  sonarr_tvshows:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/MEDIA/tvshows"
+  sonarr_anime_anime:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/MEDIA/anime"
+  radarr_movies:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/MEDIA/movies"
 
-  # --- Backup Volumes (On NAS via NFS) ---
-  # NOTE: These are used internally by *arr apps for their backup tasks.
-  # The main script backup will handle these paths from the VM.
-  prowlarr_backup:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
-  sonarr_backup:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
-  sonarr_anime_backup:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/backup"
-  radarr_backup:
-    driver: local
-    driver_opts:
-      type: nfs
-      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-      device: ":/volume1/DOCKER/Arr-Stack/Radarr/backup"
+  # --- Backup Volumes (On NAS via NFS) ---
+  prowlarr_backup:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DOCKER/Arr-Stack/Prowlarr/backup"
+  sonarr_backup:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr/backup"
+  sonarr_anime_backup:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DOCKER/Arr-Stack/Sonarr-Anime/backup"
+  radarr_backup:
+    driver: local
+    driver_opts:
+      type: nfs
+      o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+      device: ":/volume1/DOCKER/Arr-Stack/Radarr/backup"
 
-  # --- Application Config Volumes (On Local VM) ---
-  # These will use the default 'local' driver, storing data in /var/lib/docker/volumes/
-  prowlarr_config:
-  nzbget_config:
-  qbittorrent_config:
-  sonarr_config:
-  sonarr_anime_config:
-  radarr_config:
-  bazarr_config:
-  homarr_configs:
-  homarr_icons:
-  homarr_data:
-  jellyseerr_config:
-  emby_config:
-  flaresolverr_config:
+  # --- Application Config Volumes (On Local VM) ---
+  # These now use the default 'local' driver for better performance
+  prowlarr_config:
+  nzbget_config:
+  qbittorrent_config:
+  sonarr_config:
+  sonarr_anime_config:
+  radarr_config:
+  bazarr_config:
+  homarr_configs:
+  homarr_icons:
+  homarr_data:
+  jellyseerr_config:
+  emby_config:
+  flaresolverr_config:
