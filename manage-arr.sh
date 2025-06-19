@@ -217,11 +217,17 @@ function prepare_nas_folders() {
     fi
 
     local -a dirs_to_create=(
-        "/mnt/NAS-DATA/Downloads/complete"
-        "/mnt/NAS-DATA/Downloads/incomplete"
-        "/mnt/NAS-MEDIA/tvshows"
-        "/mnt/NAS-MEDIA/movies"
-        "/mnt/NAS-MEDIA/anime"
+    # Media and Download Folders
+    "/mnt/NAS-DATA/Downloads/complete"
+    "/mnt/NAS-DATA/Downloads/incomplete"
+    "/mnt/NAS-MEDIA/tvshows"
+    "/mnt/NAS-MEDIA/movies"
+    "/mnt/NAS-MEDIA/anime"
+    # Application Backup Folders on the NAS
+    "/mnt/NAS-DOCKER/Arr-Stack/Prowlarr/backup"
+    "/mnt/NAS-DOCKER/Arr-Stack/Radarr/backup"
+    "/mnt/NAS-DOCKER/Arr-Stack/Sonarr/backup"
+    "/mnt/NAS-DOCKER/Arr-Stack/Sonarr-Anime/backup"
     )
 
     log_info "Creating required directories on NAS mounts..."
