@@ -52,6 +52,8 @@ services:
     volumes:
       - nzbget_config:/config
       - downloads:/downloads
+    ports:
+      - "6789:6789"
     restart: unless-stopped
     env_file:
       - '.env'
