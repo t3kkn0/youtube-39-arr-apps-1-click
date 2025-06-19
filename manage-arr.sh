@@ -1,21 +1,20 @@
-cat << 'EOF' > ./manage-arr.sh
 #!/usr/bin/env bash
 #
 ################################################################################
 #
-#  Arr-Stack Management Script
+#  Arr-Stack Management Script
 #
-#  Description:
-#    Manages the Arr-Stack docker deployment. It handles installation,
-#    uninstallation, updates, backups, and other maintenance tasks.
+#  Description:
+#    Manages the Arr-Stack docker deployment. It handles installation,
+#    uninstallation, updates, backups, and other maintenance tasks.
 #
-#  Usage:
-#    sudo ./arr-stack-manager.sh
+#  Usage:
+#    sudo ./arr-stack-manager.sh
 #
-#  Dependencies:
-#    - git
-#    - docker (with compose v2 plugin)
-#    - rsync
+#  Dependencies:
+#    - git
+#    - docker (with compose v2 plugin)
+#    - rsync
 #
 ################################################################################
 
@@ -37,8 +36,8 @@ readonly CONFIG_BASE_ON_HOST="/var/lib/docker/volumes/arr-stack_config"
 # An array of all NAS mount points the script depends on.
 # These are only for backups and media now.
 readonly REQUIRED_MOUNTS=(
-  "/mnt/NAS-DATA"
-  "/mnt/NAS-MEDIA"
+  "/mnt/NAS-DATA"
+  "/mnt/NAS-MEDIA"
 )
 # Lock file to prevent concurrent script execution.
 readonly LOCK_FILE="/var/lock/arr_stack_manager.lock"
@@ -47,19 +46,19 @@ readonly LOCK_FILE="/var/lock/arr_stack_manager.lock"
 # Script logging is now handled by functions for consistency.
 # Colors are enabled if the script is run in an interactive terminal.
 if [[ -t 1 ]]; then
-  readonly C_RESET='\033[0m'
-  readonly C_RED='\033[0;31m'
-  readonly C_GREEN='\033[0;32m'
-  readonly C_YELLOW='\033[0;33m'
-  readonly C_BLUE='\033[0;34m'
-  readonly C_CYAN='\033[0;96m'
+  readonly C_RESET='\033[0m'
+  readonly C_RED='\033[0;31m'
+  readonly C_GREEN='\033[0;32m'
+  readonly C_YELLOW='\033[0;33m'
+  readonly C_BLUE='\033[0;34m'
+  readonly C_CYAN='\033[0;96m'
 else
-  readonly C_RESET=''
-  readonly C_RED=''
-  readonly C_GREEN=''
-  readonly C_YELLOW=''
-  readonly C_BLUE=''
-  readonly C_CYAN=''
+  readonly C_RESET=''
+  readonly C_RED=''
+  readonly C_GREEN=''
+  readonly C_YELLOW=''
+  readonly C_BLUE=''
+  readonly C_CYAN=''
 fi
 
 # --- Global Variables ---
@@ -72,18 +71,18 @@ TMP_DIR=""
 # This trap is triggered on EXIT, which includes normal exit,
 # exit due to 'set -e', and signals like INT/TERM.
 # Globals:
-#   TMP_DIR
-#   LOCK_FILE
+#   TMP_DIR
+#   LOCK_FILE
 # Arguments:
-#   None
+#   None
 #######################################
 function cleanup() {
-  # The '|| true' is to prevent the trap from exiting with an error if the
-  # variables are not set (e.g., if the script fails before they are defined).
-  rm -f "${LOCK_FILE-}" || true
-  if [[ -n "${TMP_DIR-}" ]]; then
-    rm -rf "${TMP_DIR}" || true
-  fi
+  # The '|| true' is to prevent the trap from exiting with an error if the
+  # variables are not set (e.g., if the script fails before they are defined).
+  rm -f "${LOCK_FILE-}" || true
+  if [[ -n "${TMP_DIR-}" ]]; then
+    rm -rf "${TMP_DIR}" || true
+  fi
 }
 trap cleanup EXIT
 
@@ -92,15 +91,15 @@ trap cleanup EXIT
 #######################################
 # Generic logging function.
 # Arguments:
-#   $1 - Log level (e.g., INFO, WARN, ERROR)
-#   $2 - Color for the log level
-#   $3 - Message to log
+#   $1 - Log level (e.g., INFO, WARN, ERROR)
+#   $2 - Color for the log level
+#   $3 - Message to log
 #######################################
 function log() {
-  local level="$1"
-  local color="$2"
-  local message="$3"
-  echo -e "${color}[${level}]${C_RESET} ${message}"
+  local level="$1"
+  local color="$2"
+  local message="$3"
+  echo -e "${color}[${level}]${C_RESET} ${message}"
 }
 
 function log_info() { log "INFO" "${C_GREEN}" "$1"; }
@@ -113,90 +112,90 @@ function log_prompt() { echo -e "${C_CYAN}==>${C_RESET} $1"; }
 # Checks if a given mount point is a healthy, responsive NFS mount.
 # This function has a built-in timeout to prevent script hangs.
 # Arguments:
-#   $1 - The path to the mount point to check.
+#   $1 - The path to the mount point to check.
 # Returns:
-#   0 if the mount is healthy.
-#   1 if the mount is stale, unresponsive, or not an NFS mount.
+#   0 if the mount is healthy.
+#   1 if the mount is stale, unresponsive, or not an NFS mount.
 #######################################
 function is_nfs_mount_healthy() {
-  local mount_point="$1"
-  if ! mountpoint -q "$mount_point"; then
-    log_error "Path $mount_point is not a valid mount point."
-    return 1
-  fi
-  # 'stat -f' is a low-impact way to test the connection. A 5-second timeout is generous.
-  if ! timeout 5s stat -f "$mount_point" >/dev/null 2>&1; then
-    log_error "NFS mount $mount_point is stale or unresponsive."
-    return 1
-  fi
-  return 0
+  local mount_point="$1"
+  if ! mountpoint -q "$mount_point"; then
+    log_error "Path $mount_point is not a valid mount point."
+    return 1
+  fi
+  # 'stat -f' is a low-impact way to test the connection. A 5-second timeout is generous.
+  if ! timeout 5s stat -f "$mount_point" >/dev/null 2>&1; then
+    log_error "NFS mount $mount_point is stale or unresponsive."
+    return 1
+  fi
+  return 0
 }
 
 #######################################
 # Checks all critical NFS mounts required by the script.
 # Arguments:
-#   None
+#   None
 # Returns:
-#   Exits script if any mount is unhealthy.
+#   Exits script if any mount is unhealthy.
 #######################################
 function check_all_mounts() {
-  log_info "Verifying health of all required NAS mounts..."
-  for mount in "${REQUIRED_MOUNTS[@]}"; do
-    if ! is_nfs_mount_healthy "$mount"; then
-      log_fatal "A required NAS mount is unhealthy. Please check your NFS connection and the Synology NAS, then try again."
-    fi
-  done
-  log_info "All NAS mounts are healthy."
+  log_info "Verifying health of all required NAS mounts..."
+  for mount in "${REQUIRED_MOUNTS[@]}"; do
+    if ! is_nfs_mount_healthy "$mount"; then
+      log_fatal "A required NAS mount is unhealthy. Please check your NFS connection and the Synology NAS, then try again."
+    fi
+  done
+  log_info "All NAS mounts are healthy."
 }
 
 #######################################
 # Checks for required command-line dependencies.
 # Arguments:
-#   None
+#   None
 # Returns:
-#   Exits script if a dependency is missing.
+#   Exits script if a dependency is missing.
 #######################################
 function check_dependencies() {
-  log_info "Checking for required dependencies..."
-  local missing_deps=()
-  local required_cmds=("git" "docker" "rsync")
-  for cmd in "${required_cmds[@]}"; do
-    if ! command -v "$cmd" &>/dev/null; then
-      missing_deps+=("$cmd")
-    fi
-  done
+  log_info "Checking for required dependencies..."
+  local missing_deps=()
+  local required_cmds=("git" "docker" "rsync")
+  for cmd in "${required_cmds[@]}"; do
+    if ! command -v "$cmd" &>/dev/null; then
+      missing_deps+=("$cmd")
+    fi
+  done
 
-  if [[ ${#missing_deps[@]} -ne 0 ]]; then
-    log_fatal "Missing required dependencies: ${missing_deps[*]}. Please install them and try again."
-  fi
+  if [[ ${#missing_deps[@]} -ne 0 ]]; then
+    log_fatal "Missing required dependencies: ${missing_deps[*]}. Please install them and try again."
+  fi
 
-  if ! docker compose version &>/dev/null; then
-    log_fatal "This script requires Docker Compose V2 (the 'docker compose' command). Please ensure your Docker installation is up-to-date."
-  fi
-  log_info "All dependencies are satisfied."
+  if ! docker compose version &>/dev/null; then
+    log_fatal "This script requires Docker Compose V2 (the 'docker compose' command). Please ensure your Docker installation is up-to-date."
+  fi
+  log_info "All dependencies are satisfied."
 }
 
 # --- Core Application Functions ---
 
 function show_menu() {
-  echo -e "${C_CYAN}=============================================${C_RESET}"
-  echo -e "${C_CYAN}         Arr-Stack Management Menu           ${C_RESET}"
-  echo -e "${C_CYAN}=============================================${C_RESET}"
-  echo -e " Stack is located at: ${C_YELLOW}${STACK_DIR}${C_RESET}"
-  echo ""
-  echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Prepares NAS, Clones/Pulls, copies .env, and starts)"
-  echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers/volumes)"
-  echo -e " ${C_BLUE}3. Reload Stack${C_RESET} (Pulls latest from Git & Docker, then restarts)"
-  echo ""
-  echo -e " ${C_GREEN}4. Backup Configuration${C_RESET} (Archives config folders and .env file)"
-  echo -e " ${C_RED}5. Restore Configuration${C_RESET} (Restores from a backup archive)"
-  echo ""
-  echo -e " ${C_YELLOW}6. View Live Logs${C_RESET} (Follows logs from all containers)"
-  echo -e " ${C_YELLOW}7. Prune Docker System${C_RESET} (Remove unused images/volumes/networks)"
-  echo -e " ${C_RED}8. DESTROY Config Folders${C_RESET} (Deletes ALL app config folders from VM)"
-  echo ""
-  echo -e " ${C_CYAN}0. Exit${C_RESET}"
-  echo ""
+  echo -e "${C_CYAN}=============================================${C_RESET}"
+  echo -e "${C_CYAN}         Arr-Stack Management Menu           ${C_RESET}"
+  echo -e "${C_CYAN}=============================================${C_RESET}"
+  echo -e " Stack is located at: ${C_YELLOW}${STACK_DIR}${C_RESET}"
+  echo ""
+  echo -e " ${C_GREEN}1. Install Stack${C_RESET} (Prepares NAS, Clones/Pulls, copies .env, and starts)"
+  echo -e " ${C_RED}2. Uninstall Stack${C_RESET} (Stops and removes containers/volumes)"
+  echo -e " ${C_BLUE}3. Reload Stack${C_RESET} (Pulls latest from Git & Docker, then restarts)"
+  echo ""
+  echo -e " ${C_GREEN}4. Backup Configuration${C_RESET} (Archives config folders and .env file)"
+  echo -e " ${C_RED}5. Restore Configuration${C_RESET} (Restores from a backup archive)"
+  echo ""
+  echo -e " ${C_YELLOW}6. View Live Logs${C_RESET} (Follows logs from all containers)"
+  echo -e " ${C_YELLOW}7. Prune Docker System${C_RESET} (Remove unused images/volumes/networks)"
+  echo -e " ${C_RED}8. DESTROY Config Folders${C_RESET} (Deletes ALL app config folders from VM)"
+  echo ""
+  echo -e " ${C_CYAN}0. Exit${C_RESET}"
+  echo ""
 }
 
 #######################################
@@ -257,131 +256,131 @@ function prepare_nas_folders() {
 #######################################
 # Installs the Docker stack.
 # Globals:
-#   STACK_DIR, REPO_URL, ENV_SOURCE_PATH
+#   STACK_DIR, REPO_URL, ENV_SOURCE_PATH
 # Arguments:
-#   None
+#   None
 #######################################
 function install_stack() {
-  log_info "--- Starting Stack Installation ---"
-  check_all_mounts
+  log_info "--- Starting Stack Installation ---"
+  check_all_mounts
 
-  # --- Clone or Pull Repo (Idempotent) ---
-  if [[ ! -d "$STACK_DIR" ]]; then
-    log_info "Directory $STACK_DIR not found. Cloning repository..."
-    git clone "$REPO_URL" "$STACK_DIR"
-  else
-    log_info "Stack directory exists. Pulling latest changes..."
-    (cd "$STACK_DIR" && git pull)
-  fi
+  # --- Clone or Pull Repo (Idempotent) ---
+  if [[ ! -d "$STACK_DIR" ]]; then
+    log_info "Directory $STACK_DIR not found. Cloning repository..."
+    git clone "$REPO_URL" "$STACK_DIR"
+  else
+    log_info "Stack directory exists. Pulling latest changes..."
+    (cd "$STACK_DIR" && git pull)
+  fi
 
-  # --- Handle .env file ---
-  if [[ -f "$ENV_SOURCE_PATH" ]]; then
-    log_info "Master .env file found. Copying to stack directory..."
-    cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
-  else
-    log_warn "Master .env file not found at $ENV_SOURCE_PATH."
-    local repo_env_path="$STACK_DIR/.env"
-    if [[ -f "$repo_env_path.template" && ! -f "$repo_env_path" ]]; then
-      log_info "Found .env.template, copying to .env"
-      cp "$repo_env_path.template" "$repo_env_path"
-    fi
+  # --- Handle .env file ---
+  if [[ -f "$ENV_SOURCE_PATH" ]]; then
+    log_info "Master .env file found. Copying to stack directory..."
+    cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
+  else
+    log_warn "Master .env file not found at $ENV_SOURCE_PATH."
+    local repo_env_path="$STACK_DIR/.env"
+    if [[ -f "$repo_env_path.template" && ! -f "$repo_env_path" ]]; then
+      log_info "Found .env.template, copying to .env"
+      cp "$repo_env_path.template" "$repo_env_path"
+    fi
 
-    if [[ -f "$repo_env_path" ]]; then
-      log_info "Found .env in repository. Saving a copy to $ENV_SOURCE_PATH for future use."
-      mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
-      cp "$repo_env_path" "$ENV_SOURCE_PATH"
-      echo -e "\n${C_RED}================== ACTION REQUIRED ==================${C_RESET}"
-      echo -e "${C_YELLOW}A template .env file was copied. You MUST edit the file at:${C_RESET}"
-      echo -e "${C_CYAN}${ENV_SOURCE_PATH}${C_RESET}"
-      echo -e "${C_YELLOW}with your correct settings (TZ, PUID, PGID) before the stack will work properly!${C_RESET}"
-      echo -e "${C_RED}=====================================================${C_RESET}\n"
-      read -p "Press Enter to continue, or CTRL+C to exit and edit the file now."
-    else
-      log_error "No master .env file found and no .env or .env.template in repository."
-      log_error "Please create a .env file at $ENV_SOURCE_PATH and run again."
-      return 1
-    fi
-  fi
+    if [[ -f "$repo_env_path" ]]; then
+      log_info "Found .env in repository. Saving a copy to $ENV_SOURCE_PATH for future use."
+      mkdir -p "$(dirname "$ENV_SOURCE_PATH")"
+      cp "$repo_env_path" "$ENV_SOURCE_PATH"
+      echo -e "\n${C_RED}================== ACTION REQUIRED ==================${C_RESET}"
+      echo -e "${C_YELLOW}A template .env file was copied. You MUST edit the file at:${C_RESET}"
+      echo -e "${C_CYAN}${ENV_SOURCE_PATH}${C_RESET}"
+      echo -e "${C_YELLOW}with your correct settings (TZ, PUID, PGID) before the stack will work properly!${C_RESET}"
+      echo -e "${C_RED}=====================================================${C_RESET}\n"
+      read -p "Press Enter to continue, or CTRL+C to exit and edit the file now."
+    else
+      log_error "No master .env file found and no .env or .env.template in repository."
+      log_error "Please create a .env file at $ENV_SOURCE_PATH and run again."
+      return 1
+    fi
+  fi
 
-  # --- Prepare NAS folders ---
-  prepare_nas_folders
+  # --- Prepare NAS folders ---
+  prepare_nas_folders
 
-  # --- Start Containers ---
-  log_info "Starting Docker containers..."
-  (cd "$STACK_DIR" && docker compose up -d)
-  log_info "--- Stack Installation Complete ---"
+  # --- Start Containers ---
+  log_info "Starting Docker containers..."
+  (cd "$STACK_DIR" && docker compose up -d)
+  log_info "--- Stack Installation Complete ---"
 }
 
 #######################################
 # Uninstalls the Docker stack.
 # Globals:
-#   STACK_DIR
+#   STACK_DIR
 # Arguments:
-#   None
+#   None
 #######################################
 function uninstall_stack() {
-  log_info "--- Starting Stack Uninstallation ---"
-  if [[ ! -d "$STACK_DIR" ]]; then
-    log_warn "Stack directory not found. Nothing to do."
-    return
-  fi
+  log_info "--- Starting Stack Uninstallation ---"
+  if [[ ! -d "$STACK_DIR" ]]; then
+    log_warn "Stack directory not found. Nothing to do."
+    return
+  fi
 
-  log_prompt "This will stop and remove all containers defined in the compose file."
-  read -p "Are you sure you want to continue? [y/N]: " confirm
-  if [[ ! "$confirm" =~ ^[yY]$ ]]; then
-    log_info "Aborting."
-    return
-  fi
+  log_prompt "This will stop and remove all containers defined in the compose file."
+  read -p "Are you sure you want to continue? [y/N]: " confirm
+  if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+    log_info "Aborting."
+    return
+  fi
 
-  log_warn "This will NOT touch your media libraries (movies/TV shows) on the NAS."
-  read -p "Do you also want to remove all associated volumes (DELETES LOCAL APP CONFIGS)? [y/N]: " confirm_volumes
+  log_warn "This will NOT touch your media libraries (movies/TV shows) on the NAS."
+  read -p "Do you also want to remove all associated volumes (DELETES LOCAL APP CONFIGS)? [y/N]: " confirm_volumes
 
-  (
-    cd "$STACK_DIR"
-    if [[ "$confirm_volumes" =~ ^[yY]$ ]]; then
-      log_warn "Stopping containers AND removing volumes... This is permanent!"
-      docker compose down -v
-    else
-      log_info "Stopping containers but leaving volumes intact..."
-      docker compose down
-    fi
-  )
+  (
+    cd "$STACK_DIR"
+    if [[ "$confirm_volumes" =~ ^[yY]$ ]]; then
+      log_warn "Stopping containers AND removing volumes... This is permanent!"
+      docker compose down -v
+    else
+      log_info "Stopping containers but leaving volumes intact..."
+      docker compose down
+    fi
+  )
 
-  log_info "--- Stack Uninstallation Complete ---"
+  log_info "--- Stack Uninstallation Complete ---"
 }
 
 #######################################
 # Pulls latest updates and reloads the stack.
 # Globals:
-#   STACK_DIR, ENV_SOURCE_PATH
+#   STACK_DIR, ENV_SOURCE_PATH
 # Arguments:
-#   None
+#   None
 #######################################
 function reload_stack() {
-  log_info "--- Reloading Stack ---"
-  check_all_mounts
-  if [[ ! -d "$STACK_DIR" ]]; then
-    log_error "Stack directory $STACK_DIR not found. Please install first (Option 1)."
-    return 1
-  fi
-  if [[ ! -f "$ENV_SOURCE_PATH" ]]; then
-    log_error "Master .env file not found at $ENV_SOURCE_PATH. Cannot reload."
-    return 1
-  fi
+  log_info "--- Reloading Stack ---"
+  check_all_mounts
+  if [[ ! -d "$STACK_DIR" ]]; then
+    log_error "Stack directory $STACK_DIR not found. Please install first (Option 1)."
+    return 1
+  fi
+  if [[ ! -f "$ENV_SOURCE_PATH" ]]; then
+    log_error "Master .env file not found at $ENV_SOURCE_PATH. Cannot reload."
+    return 1
+  fi
 
-  (
-    cd "$STACK_DIR"
-    log_info "Pulling latest changes from Git..."
-    git pull
-    log_info "Pulling latest Docker images..."
-    docker compose pull
-    log_info "Copying master .env file to ensure stack is in sync..."
-    cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
-    log_info "Recreating containers with new images/configuration..."
-    docker compose up -d --force-recreate --remove-orphans
-  )
+  (
+    cd "$STACK_DIR"
+    log_info "Pulling latest changes from Git..."
+    git pull
+    log_info "Pulling latest Docker images..."
+    docker compose pull
+    log_info "Copying master .env file to ensure stack is in sync..."
+    cp "$ENV_SOURCE_PATH" "$STACK_DIR/.env"
+    log_info "Recreating containers with new images/configuration..."
+    docker compose up -d --force-recreate --remove-orphans
+  )
 
-  log_info "--- Stack Reload Complete ---"
+  log_info "--- Stack Reload Complete ---"
 }
 
 #######################################
@@ -399,7 +398,7 @@ function backup_configs() {
     local project_name
     project_name=$(basename "$STACK_DIR") # Assumes project name is the directory name
     local config_volumes_to_backup=()
-    
+
     log_info "Identifying local config volumes to back up..."
     # Get a list of all volumes for this docker-compose project
     local all_volumes
@@ -509,7 +508,7 @@ function restore_configs() {
             volume_name=$(basename "$backed_up_path")
             local current_volume_path
             current_volume_path=$(docker volume inspect -f '{{.Mountpoint}}' "$volume_name" 2>/dev/null || true)
-            
+
             if [[ -n "$current_volume_path" && -d "$current_volume_path" ]]; then
                 log_info "  Restoring to volume '${volume_name}'..."
                 rsync -a --delete "${backed_up_path}/" "${current_volume_path}/"
@@ -536,25 +535,25 @@ function restore_configs() {
 
 
 function view_logs() {
-  if [[ ! -d "$STACK_DIR" ]]; then
-    log_error "Stack directory not found. Is the stack installed?"
-    return
-  fi
-  log_info "Showing live logs for all services. Press CTRL+C to stop."
-  (cd "$STACK_DIR" && docker compose logs -f)
+  if [[ ! -d "$STACK_DIR" ]]; then
+    log_error "Stack directory not found. Is the stack installed?"
+    return
+  fi
+  log_info "Showing live logs for all services. Press CTRL+C to stop."
+  (cd "$STACK_DIR" && docker compose logs -f)
 }
 
 function prune_docker() {
-  log_warn "!!! WARNING !!!"
-  log_warn "This will remove all stopped containers, unused networks, dangling images,"
-  log_warn "and the build cache. This can free up a lot of space but is irreversible."
-  read -p "Are you sure you want to prune the Docker system? [y/N]: " confirm
-  if [[ ! "$confirm" =~ ^[yY]$ ]]; then
-    log_info "Aborting."
-    return
-  fi
-  docker system prune -a -f
-  log_info "Docker system prune complete."
+  log_warn "!!! WARNING !!!"
+  log_warn "This will remove all stopped containers, unused networks, dangling images,"
+  log_warn "and the build cache. This can free up a lot of space but is irreversible."
+  read -p "Are you sure you want to prune the Docker system? [y/N]: " confirm
+  if [[ ! "$confirm" =~ ^[yY]$ ]]; then
+    log_info "Aborting."
+    return
+  fi
+  docker system prune -a -f
+  log_info "Docker system prune complete."
 }
 
 function destroy_config_folders() {
@@ -579,48 +578,47 @@ function destroy_config_folders() {
 
 # --- Main Script Logic ---
 function main() {
-  # Root check for operations that require it
-  if [[ $EUID -ne 0 ]]; then
-    log_warn "This script has functions that require root privileges."
-    log_warn "Please run with 'sudo' for full functionality."
-  fi
+  # Root check for operations that require it
+  if [[ $EUID -ne 0 ]]; then
+    log_warn "This script has functions that require root privileges."
+    log_warn "Please run with 'sudo' for full functionality."
+  fi
 
-  # Check for lock file
-  if [[ -e "$LOCK_FILE" ]]; then
-    log_fatal "Lock file $LOCK_FILE exists. Another instance may be running. Aborting."
-  fi
-  echo $$ > "$LOCK_FILE"
+  # Check for lock file
+  if [[ -e "$LOCK_FILE" ]]; then
+    log_fatal "Lock file $LOCK_FILE exists. Another instance may be running. Aborting."
+  fi
+  echo $$ > "$LOCK_FILE"
 
-  check_dependencies
+  check_dependencies
 
-  while true; do
-    show_menu
-    read -p "Enter your choice [0-8]: " choice
+  while true; do
+    show_menu
+    read -p "Enter your choice [0-8]: " choice
 
-    # Clear screen after choice for better UX
-    tput clear || clear
+    # Clear screen after choice for better UX
+    tput clear || clear
 
-    case "$choice" in
-      1) install_stack ;;
-      2) uninstall_stack ;;
-      3) reload_stack ;;
-      4) backup_configs ;;
-      5) restore_configs ;;
-      6) view_logs ;;
-      7) prune_docker ;;
-      8) destroy_config_folders ;;
-      0) log_info "Exiting. Goodbye!"; break ;;
-      *) log_error "Invalid option. Please try again." ;;
-    esac
+    case "$choice" in
+      1) install_stack ;;
+      2) uninstall_stack ;;
+      3) reload_stack ;;
+      4) backup_configs ;;
+      5) restore_configs ;;
+      6) view_logs ;;
+      7) prune_docker ;;
+      8) destroy_config_folders ;;
+      0) log_info "Exiting. Goodbye!"; break ;;
+      *) log_error "Invalid option. Please try again." ;;
+    esac
 
-    if [[ "$choice" != "0" ]]; then
-      read -n 1 -s -r -p "Press any key to return to the menu..."
-      echo ""
-      tput clear || clear
-    fi
-  done
+    if [[ "$choice" != "0" ]]; then
+      read -n 1 -s -r -p "Press any key to return to the menu..."
+      echo ""
+      tput clear || clear
+    fi
+  done
 }
 
 # Start the script
 main "$@"
-EOF
