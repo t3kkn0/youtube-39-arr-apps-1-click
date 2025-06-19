@@ -2,12 +2,12 @@
 # This anchor is no longer used for the entire volume but is kept for reference.
 # The repetition in the volumes block below is necessary due to how Docker Compose handles YAML merging.
 x-nfs-volume-opts: &nfs-volume-opts
-  driver: local
-  driver_opts:
-    type: nfs
-    o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
-    device: ":/path/to/be/overridden"
-
+  driver: local
+  driver_opts:
+    type: nfs
+    o: "addr=10.20.10.27,rw,hard,noatime,nfsvers=3"
+    device: ":/path/to/be/overridden"
+    
 services:
   #  ██████╗ ██╗     ██╗    ██╗███████╗████████╗██╗  ██╗███╗   ██╗
   # ██╔════╝ ██║     ██║    ██║██╔════╝╚══██╔══╝██║  ██║████╗  ██║
