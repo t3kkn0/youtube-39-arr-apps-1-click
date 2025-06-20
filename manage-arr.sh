@@ -261,14 +261,25 @@ function prepare_nas_folders() {
 }
 
 #######################################
-# Installs the Docker stack.
+# Installs the Docker stack or offers to restore.
 # Globals:
 #   STACK_DIR, REPO_URL, ENV_SOURCE_PATH
 # Arguments:
 #   None
 #######################################
 function install_stack() {
-  log_info "--- Starting Stack Installation ---"
+  # --- Offer to restore first ---
+  read -p "Do you want to restore an existing configuration instead of a fresh installation? [y/N]: " confirm_restore
+  if [[ "$confirm_restore" =~ ^[yY]$ ]]; then
+      log_info "Switching to restore process..."
+      restore_configs
+      # The restore function handles the rest of the process, including starting the stack.
+      # So we exit this function to avoid duplicate actions.
+      log_info "Restore process initiated. Returning to main menu."
+      return
+  fi
+
+  log_info "--- Starting Fresh Stack Installation ---"
   check_all_mounts
 
   # --- Clone or Pull Repo (Idempotent) ---
@@ -318,8 +329,9 @@ function install_stack() {
   log_info "--- Stack Installation Complete ---"
 }
 
+
 #######################################
-# Uninstalls the Docker stack.
+# Uninstalls the Docker stack, offering backup first.
 # Globals:
 #   STACK_DIR
 # Arguments:
@@ -332,8 +344,14 @@ function uninstall_stack() {
     return
   fi
 
+  # --- Offer to back up first ---
+  read -p "Do you want to back up your current configuration before uninstalling? (Recommended) [y/N]: " confirm_backup
+  if [[ "$confirm_backup" =~ ^[yY]$ ]]; then
+    backup_configs
+  fi
+
   log_prompt "This will stop and remove all containers defined in the compose file."
-  read -p "Are you sure you want to continue? [y/N]: " confirm
+  read -p "Are you sure you want to continue with uninstallation? [y/N]: " confirm
   if [[ ! "$confirm" =~ ^[yY]$ ]]; then
     log_info "Aborting."
     return
@@ -355,6 +373,7 @@ function uninstall_stack() {
 
   log_info "--- Stack Uninstallation Complete ---"
 }
+
 
 #######################################
 # Pulls latest updates and reloads the stack.
